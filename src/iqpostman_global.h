@@ -1,0 +1,12 @@
+#ifndef IQPOSTMAN_GLOBAL_H
+#define IQPOSTMAN_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(IQPOSTMAN_LIBRARY)
+#  define IQPOSTMANSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define IQPOSTMANSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // IQPOSTMAN_GLOBAL_H
