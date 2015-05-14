@@ -17,50 +17,35 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCLIENT_H
-#define IQPOSTMANABSTRACTCLIENT_H
+#ifndef IQPOSTMANMULTIPARTCONTENT_H
+#define IQPOSTMANMULTIPARTCONTENT_H
 
-#include <QObject>
-#include "iqpostmanmail.h"
-#include "iqpostman_global.h"
+#include "iqpostmanabstractcontent.h"
+#include "iqpostmanmultipartcontenttype.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractClient : public QObject
+class IqPostmanMultipartContent : public IqPostmanAbstractContent
 {
     Q_OBJECT
+    Q_PROPERTY(IqPostmanMultipartContentType * contentType READ contentType CONSTANT)
+    Q_PROPERTY(QList<IqPostmanAbstractContent *> parts READ parts WRITE setParts NOTIFY partsChanged)
 public:
-    enum ConnectMode
-    {
-        Tcp,
-        Ssl
-    };
+    explicit IqPostmanMultipartContent(QObject *parent = Q_NULLPTR);
+    ~IqPostmanMultipartContent();
 
-    enum MimeType
-    {
-        Text,
-        Html
-    };
+    virtual IqPostmanMultipartContentType *contentType() const Q_DECL_OVERRIDE;
+    virtual bool fromString(const QString &string) Q_DECL_OVERRIDE;
+    virtual QString toString() const Q_DECL_OVERRIDE;
 
-    explicit IqPostmanAbstractClient(QObject *parent = 0);
-    virtual ~IqPostmanAbstractClient();
+public:
+    QList<IqPostmanAbstractContent *> parts() const;
+    void setParts(const QList<IqPostmanAbstractContent *> &parts);
 
-    virtual bool connectToHost(const QString &host,
-                               quint16 port,
-                               ConnectMode mode,
-                               qint32 reconectCount = 5,
-                               qint32 reconectWaitTime = 7000) = 0;
+signals:
+    void partsChanged();
 
-    virtual bool login(const QString &user,
-                       const QString &password) const = 0;
-
-    virtual QStringList folders(bool *ok) const = 0;
-
-    virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
-
-    static QString crlf();
+private:
+    IqPostmanMultipartContentType *m_contentType;
+    QList<IqPostmanAbstractContent *> m_parts;
 };
 
-#endif // IQPOSTMANABSTRACTCLIENT_H
+#endif // IQPOSTMANMULTIPARTCONTENT_H

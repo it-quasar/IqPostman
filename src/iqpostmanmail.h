@@ -22,19 +22,31 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <QSharedData>
+#include "iqpostmanmailheader.h"
+#include "iqpostmanabstractcontent.h"
 #include "iqpostman_global.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanMail {
+class IQPOSTMANSHARED_EXPORT IqPostmanMail : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(IqPostmanMailHeader * header READ header CONSTANT)
+    Q_PROPERTY(QString sourceId READ sourceId WRITE setSourceId NOTIFY sourceIdChanged)
+    Q_PROPERTY(MailFlags flags READ flags WRITE setFlags NOTIFY flagsChanged)
+    Q_PROPERTY(IqPostmanAbstractContent * content READ content WRITE setContent NOTIFY contentChanged)
 public:
-    explicit IqPostmanMail();
     enum MailFlag
     {
+        UnknownFlag = 0x0,
         Seen = 0x1,
         Answered = 0x2,
         Deleted = 0x4,
         Draft = 0x8
     };
     Q_DECLARE_FLAGS(MailFlags, MailFlag)
+
+    explicit IqPostmanMail(QObject *parent = Q_NULLPTR);
+    ~IqPostmanMail();
 
 public:
     QString sourceId() const;
@@ -43,29 +55,21 @@ public:
     MailFlags flags() const;
     void setFlags(const MailFlags &flags);
 
-    QString subject() const;
-    void setSubject(const QString &subject);
+    IqPostmanMailHeader *header() const;
 
-    QString from() const;
-    void setFrom(const QString &from);
+    IqPostmanAbstractContent *content() const;
+    void setContent(IqPostmanAbstractContent *content);
 
-    QString to() const;
-    void setTo(const QString &to);
-
-    QString cc() const;
-    void setCc(const QString &cc);
-
-    QDateTime date() const;
-    void setDate(const QDateTime &date);
+signals:
+    void sourceIdChanged();
+    void flagsChanged();
+    void contentChanged();
 
 private:
+    IqPostmanMailHeader *m_header;
     QString m_sourceId;
     MailFlags m_flags;
-    QString m_subject;
-    QString m_from;
-    QString m_to;
-    QString m_cc;
-    QDateTime m_date;
+    IqPostmanAbstractContent *m_content;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(IqPostmanMail::MailFlags)

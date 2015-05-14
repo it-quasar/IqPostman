@@ -17,50 +17,50 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCLIENT_H
-#define IQPOSTMANABSTRACTCLIENT_H
+#ifndef IQPOSTMANMULTIPARTCONTENTTYPE_H
+#define IQPOSTMANMULTIPARTCONTENTTYPE_H
 
-#include <QObject>
-#include "iqpostmanmail.h"
+#include "iqpostmanabstractcontenttype.h"
 #include "iqpostman_global.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractClient : public QObject
+class IQPOSTMANSHARED_EXPORT IqPostmanMultipartContentType : public IqPostmanAbstractContentType
 {
     Q_OBJECT
+    Q_PROPERTY(SubType subType READ subType WRITE setSubType NOTIFY subTypeChanged)
+    Q_PROPERTY(QString boundary READ boundary WRITE setBoundary NOTIFY boundaryChanged)
+    Q_ENUMS(SubType)
 public:
-    enum ConnectMode
+    enum SubType
     {
-        Tcp,
-        Ssl
+        UnknownSubType,
+        Mixed,
+        Alternative,
+        Parallel,
+        Digest
     };
 
-    enum MimeType
-    {
-        Text,
-        Html
-    };
+    explicit IqPostmanMultipartContentType(QObject *parent = Q_NULLPTR);
 
-    explicit IqPostmanAbstractClient(QObject *parent = 0);
-    virtual ~IqPostmanAbstractClient();
+    virtual IqPostmanMime::ContentType type() const Q_DECL_OVERRIDE;
 
-    virtual bool connectToHost(const QString &host,
-                               quint16 port,
-                               ConnectMode mode,
-                               qint32 reconectCount = 5,
-                               qint32 reconectWaitTime = 7000) = 0;
+    virtual bool fromString(const QString &string) Q_DECL_OVERRIDE;
 
-    virtual bool login(const QString &user,
-                       const QString &password) const = 0;
+    virtual QString toString() const Q_DECL_OVERRIDE;
 
-    virtual QStringList folders(bool *ok) const = 0;
+public:
+    SubType subType() const;
+    void setSubType(const SubType &subType);
 
-    virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
+    QString boundary() const;
+    void setBoundary(const QString &boundary);
 
-    static QString crlf();
+signals:
+    void subTypeChanged();
+    void boundaryChanged();
+
+private:
+    SubType m_subType;
+    QString m_boundary;
 };
 
-#endif // IQPOSTMANABSTRACTCLIENT_H
+#endif // IQPOSTMANMULTIPARTCONTENTTYPE_H

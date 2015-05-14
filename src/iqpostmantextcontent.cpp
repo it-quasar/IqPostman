@@ -17,24 +17,66 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
+#include "iqpostmantextcontent.h"
 #include "iqpostmanabstractclient.h"
 #include <QTextCodec>
-#include <QRegExp>
-#include <QByteArray>
 
-IqPostmanAbstractClient::IqPostmanAbstractClient(QObject *parent) :
-    QObject(parent)
+IqPostmanTextContent::IqPostmanTextContent(QObject *parent) :
+    IqPostmanAbstractContent(parent),
+    m_contentType(new IqPostmanTextContentType(this))
 {
 }
 
-IqPostmanAbstractClient::~IqPostmanAbstractClient()
+IqPostmanTextContent::~IqPostmanTextContent()
 {
 }
 
-QString IqPostmanAbstractClient::crlf()
+IqPostmanTextContentType *IqPostmanTextContent::contentType() const
+{
+    return m_contentType;
+}
+
+bool IqPostmanTextContent::fromString(const QString &string)
+{
+    QString contentTypeString;
+    QString contentTransferEncodingString;
+    QString contentString;
+    splitContent(string, &contentTypeString, &contentTransferEncodingString, &contentString);
+    if (!m_contentType->fromString(contentTypeString))
+        return false;
+    setTransferEncoding(IqPostmanMime::contentTransferEncodingFromString(contentTransferEncodingString));
+
+    QTextCodec *codec = QTextCodec::codecForName(m_contentType->charset().toLocal8Bit().constData());
+    if (codec)
+        setText(codec->toUnicode(decode(contentString, transferEncoding())));
+    else
+        setText(contentString);
+
+    return true;
+}
+
+QString IqPostmanTextContent::toString() const
 {
     QString result;
-    result.append(QChar(QChar::CarriageReturn));
-    result.append(QChar(QChar::LineFeed));
+    result.append(m_contentType->toString());
+    result.append(IqPostmanAbstractClient::crlf());
+    result.append(IqPostmanMime::contentTransferEncodingToString(transferEncoding()));
+    result.append(IqPostmanAbstractClient::crlf());
+
+    result.append(encode(text().toLocal8Bit(), transferEncoding()));
     return result;
 }
+
+QString IqPostmanTextContent::text() const
+{
+    return m_text;
+}
+
+void IqPostmanTextContent::setText(const QString &text)
+{
+    if (m_text != text) {
+        m_text = text;
+        emit textChanged();
+    }
+}
+

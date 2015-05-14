@@ -17,50 +17,42 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCLIENT_H
-#define IQPOSTMANABSTRACTCLIENT_H
+#include "iqpostmanabstractcontenttype.h"
 
-#include <QObject>
-#include "iqpostmanmail.h"
-#include "iqpostman_global.h"
+#include "iqpostmantextcontenttype.h"
+#include "iqpostmanmultipartcontenttype.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractClient : public QObject
+#include <QRegExp>
+
+IqPostmanAbstractContentType::IqPostmanAbstractContentType(QObject *parent) :
+    QObject(parent)
 {
-    Q_OBJECT
-public:
-    enum ConnectMode
-    {
-        Tcp,
-        Ssl
-    };
+}
 
-    enum MimeType
-    {
-        Text,
-        Html
-    };
+IqPostmanAbstractContentType::~IqPostmanAbstractContentType()
+{
+}
 
-    explicit IqPostmanAbstractClient(QObject *parent = 0);
-    virtual ~IqPostmanAbstractClient();
+IqPostmanAbstractContentType *IqPostmanAbstractContentType::createFromString(const QString &string)
+{
+    switch (IqPostmanMime::contentTypeFromString(string)) {
+    case IqPostmanMime::TypeText: {
+        IqPostmanTextContentType *result = new IqPostmanTextContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanMime::TypeMultipart: {
+        IqPostmanMultipartContentType *result = new IqPostmanMultipartContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanMime::TypeUnknown:
+        break;
+    }
 
-    virtual bool connectToHost(const QString &host,
-                               quint16 port,
-                               ConnectMode mode,
-                               qint32 reconectCount = 5,
-                               qint32 reconectWaitTime = 7000) = 0;
-
-    virtual bool login(const QString &user,
-                       const QString &password) const = 0;
-
-    virtual QStringList folders(bool *ok) const = 0;
-
-    virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
-
-    static QString crlf();
-};
-
-#endif // IQPOSTMANABSTRACTCLIENT_H
+    return Q_NULLPTR;
+}

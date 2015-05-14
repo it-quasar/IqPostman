@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.1.0 FATAL_ERROR)
 
 set (PROJECT IqPostman)
-set (VERSION "1.0.0")
+set (VERSION "0.3.0")
 
 if (UNIX)
     string (TOLOWER ${PROJECT} TARGET)
@@ -28,7 +28,15 @@ source_group ("Header Files" FILES ${HEADERS})
 
 add_definitions (-DIQPOSTMAN_LIBRARY)
 add_definitions (-DLIB_VERSION=${VERSION})
-add_library (${TARGET} SHARED ${SOURCES})
+
+set (VERSIONINFO_RES_FILE "")
+if(MINGW)
+    file (GLOB VERSIONINFO_RES_FILE . src/versioninfo.rc)
+    SET (CMAKE_RC_COMPILE_OBJECT
+            "<CMAKE_RC_COMPILER> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
+endif(MINGW)
+
+add_library (${TARGET} SHARED ${SOURCES} ${VERSIONINFO_RES_FILE})
 
 target_link_libraries (${TARGET} Qt5::Network)
 

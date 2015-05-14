@@ -17,50 +17,82 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCLIENT_H
-#define IQPOSTMANABSTRACTCLIENT_H
+#ifndef IQPOSTMANMIME_H
+#define IQPOSTMANMIME_H
 
+#include <QString>
 #include <QObject>
-#include "iqpostmanmail.h"
 #include "iqpostman_global.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractClient : public QObject
+class IQPOSTMANSHARED_EXPORT IqPostmanMime
 {
-    Q_OBJECT
+    Q_GADGET
+    Q_ENUMS(ContentType)
+    Q_ENUMS(ContentTransferEncoding)
 public:
-    enum ConnectMode
+    enum ContentType
     {
-        Tcp,
-        Ssl
+        TypeUnknown,
+        TypeText,
+        TypeMultipart,
+        TypeMessage,
+        TypeImage,
+        TypeAudio,
+        TypeVideo,
+        TypeApplication
     };
 
-    enum MimeType
+//    enum MessageSubType
+//    {
+//        MessageRfc822,
+//        MessagePartial,
+//        MessageExternalBody
+//    };
+
+//    enum ImageSubType
+//    {
+//        ImageJpg,
+//        ImagePng,
+//        ImageBmp,
+//        ImageTiff
+//    };
+
+//    enum AudioSubType
+//    {
+//        AudioBasic,
+//        AudioMp3
+//    };
+
+//    enum VideoSubType
+//    {
+//        VideoMpeg,
+//        VideoQuicktime
+//    };
+
+//    enum ApplicationSubType
+//    {
+//        ApplicationOctetStream,
+//        ApplicationPostScript,
+//        ApplicationRtf,
+//        ApplicationPdf,
+//        ApplicationMsword
+//    };
+
+    enum ContentTransferEncoding
     {
-        Text,
-        Html
+        EncodingUnknown,
+        Encoding7bit,
+        EncodingQuotedPrintable,
+        EncodingBase64,
+        Encoding8bit,
+        EncodingBinary
     };
 
-    explicit IqPostmanAbstractClient(QObject *parent = 0);
-    virtual ~IqPostmanAbstractClient();
+    IqPostmanMime();
 
-    virtual bool connectToHost(const QString &host,
-                               quint16 port,
-                               ConnectMode mode,
-                               qint32 reconectCount = 5,
-                               qint32 reconectWaitTime = 7000) = 0;
-
-    virtual bool login(const QString &user,
-                       const QString &password) const = 0;
-
-    virtual QStringList folders(bool *ok) const = 0;
-
-    virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
-
-    static QString crlf();
+    static ContentType contentTypeFromString(const QString &string);
+    static ContentTransferEncoding contentTransferEncodingFromString(const QString &string);
+    static QString contentTransferEncodingToString(ContentTransferEncoding encoding);
 };
 
-#endif // IQPOSTMANABSTRACTCLIENT_H
+#endif // IQPOSTMANMIME_H

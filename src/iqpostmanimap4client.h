@@ -43,10 +43,10 @@ public:
     virtual QStringList folders(bool *ok) const Q_DECL_OVERRIDE;
 
     virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, IqPostmanMail> &existMails,
-                            QHash<QString, IqPostmanMail> *newMails,
-                            QHash<QString, IqPostmanMail> *changedMails,
-                            QHash<QString, IqPostmanMail> *removedMails) const Q_DECL_OVERRIDE;
+                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
+                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
+                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
+                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const Q_DECL_OVERRIDE;
 
 private:
     enum ResponseResult
@@ -65,10 +65,18 @@ private:
     bool selectFolder(const QString &folderName) const;
 
     QHash<QString, IqPostmanMail::MailFlags> mailFlags(const QString &folderName,
-                                                const QStringList &mails,
-                                                bool *ok) const;
+                                                       const QStringList &mails,
+                                                       bool *ok) const;
 
-    bool loadMailPre(const QString &folderName, QHash<QString, IqPostmanMail> *mails) const;
+    bool loadMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails) const;
+
+    enum MailData
+    {
+        Header,
+        Content
+    };
+
+    bool fetchMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails, MailData data) const;
 
     QString utf7Decode(const QString &string) const;
     QString utf7Encode(const QString &string) const;

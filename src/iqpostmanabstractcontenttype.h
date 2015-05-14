@@ -17,50 +17,27 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCLIENT_H
-#define IQPOSTMANABSTRACTCLIENT_H
+#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
+#define IQPOSTMANABSTRACTCONTENTTYPE_H
 
 #include <QObject>
-#include "iqpostmanmail.h"
 #include "iqpostman_global.h"
+#include "iqpostmanmime.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractClient : public QObject
+class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
 {
     Q_OBJECT
 public:
-    enum ConnectMode
-    {
-        Tcp,
-        Ssl
-    };
+    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
+    virtual ~IqPostmanAbstractContentType();
 
-    enum MimeType
-    {
-        Text,
-        Html
-    };
+    virtual IqPostmanMime::ContentType type() const = 0;
 
-    explicit IqPostmanAbstractClient(QObject *parent = 0);
-    virtual ~IqPostmanAbstractClient();
+    virtual bool fromString(const QString &string) = 0;
 
-    virtual bool connectToHost(const QString &host,
-                               quint16 port,
-                               ConnectMode mode,
-                               qint32 reconectCount = 5,
-                               qint32 reconectWaitTime = 7000) = 0;
+    virtual QString toString() const = 0;
 
-    virtual bool login(const QString &user,
-                       const QString &password) const = 0;
-
-    virtual QStringList folders(bool *ok) const = 0;
-
-    virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
-
-    static QString crlf();
+    static IqPostmanAbstractContentType *createFromString(const QString &string);
 };
 
-#endif // IQPOSTMANABSTRACTCLIENT_H
+#endif // IQPOSTMANABSTRACTCONTENTTYPE_H

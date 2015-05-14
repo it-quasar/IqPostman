@@ -19,7 +19,14 @@
 
 #include "iqpostmanmail.h"
 
-IqPostmanMail::IqPostmanMail()
+IqPostmanMail::IqPostmanMail(QObject *parent) :
+    QObject(parent),
+    m_header(new IqPostmanMailHeader(this)),
+    m_content(Q_NULLPTR)
+{
+}
+
+IqPostmanMail::~IqPostmanMail()
 {
 }
 
@@ -30,7 +37,10 @@ QString IqPostmanMail::sourceId() const
 
 void IqPostmanMail::setSourceId(const QString &sourceId)
 {
-    m_sourceId = sourceId;
+    if (m_sourceId != sourceId) {
+        m_sourceId = sourceId;
+        emit sourceIdChanged();
+    }
 }
 
 IqPostmanMail::MailFlags IqPostmanMail::flags() const
@@ -40,56 +50,32 @@ IqPostmanMail::MailFlags IqPostmanMail::flags() const
 
 void IqPostmanMail::setFlags(const MailFlags &flags)
 {
-    m_flags = flags;
+    if (m_flags != flags) {
+        m_flags = flags;
+        emit flagsChanged();
+    }
 }
 
-QString IqPostmanMail::subject() const
+IqPostmanMailHeader *IqPostmanMail::header() const
 {
-    return m_subject;
+    return m_header;
 }
 
-void IqPostmanMail::setSubject(const QString &subject)
+IqPostmanAbstractContent *IqPostmanMail::content() const
 {
-    m_subject = subject;
+    return m_content;
 }
 
-QString IqPostmanMail::from() const
+void IqPostmanMail::setContent(IqPostmanAbstractContent *content)
 {
-    return m_from;
-}
+    if (m_content != content) {
+        if (m_content)
+            m_content->deleteLater();
 
-void IqPostmanMail::setFrom(const QString &from)
-{
-    m_from = from;
-}
-
-QString IqPostmanMail::to() const
-{
-    return m_to;
-}
-
-void IqPostmanMail::setTo(const QString &to)
-{
-    m_to = to;
-}
-
-QString IqPostmanMail::cc() const
-{
-    return m_cc;
-}
-
-void IqPostmanMail::setCc(const QString &cc)
-{
-    m_cc = cc;
-}
-
-QDateTime IqPostmanMail::date() const
-{
-    return m_date;
-}
-
-void IqPostmanMail::setDate(const QDateTime &date)
-{
-    m_date = date;
+        m_content = content;
+        if (m_content)
+            m_content->setParent(this);
+        emit contentChanged();
+    }
 }
 
