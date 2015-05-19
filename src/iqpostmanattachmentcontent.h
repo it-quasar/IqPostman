@@ -17,39 +17,33 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#ifndef IQPOSTMANATTACHMENTCONTENT_H
+#define IQPOSTMANATTACHMENTCONTENT_H
 
-#include <QObject>
+#include "iqpostmanabstractcontent.h"
 #include "iqpostman_global.h"
-#include "iqpostmanmime.h"
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+
+class IQPOSTMANSHARED_EXPORT IqPostmanAttachmentContent : public IqPostmanAbstractContent
 {
     Q_OBJECT
+    Q_PROPERTY(QByteArray data READ data WRITE setData NOTIFY dataChanged)
 public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
-
-    virtual IqPostmanMime::ContentType type() const = 0;
-
-    virtual QString typeName() const = 0;
-
-    bool fromString(const QString &string);
-
-    QString toString() const;
-
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
+    explicit IqPostmanAttachmentContent(QObject *parent = Q_NULLPTR);
 
 protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
+    virtual bool fromContentData(const IqPostmanContentData &data) Q_DECL_OVERRIDE;
+    virtual const IqPostmanContentData toContentData() const Q_DECL_OVERRIDE;
+
+public:
+    virtual QByteArray data() const;
+    virtual bool setData(const QByteArray &data);
+
+signals:
+    void dataChanged();
 
 private:
-    QHash<QString, QString> parseData(const QString &string) const;
+    QByteArray m_data;
 };
 
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+#endif // IQPOSTMANATTACHMENTCONTENT_H

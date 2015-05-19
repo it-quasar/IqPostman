@@ -17,39 +17,20 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#include "iqpostmanaudiocontent.h"
+#include <QBuffer>
 
-#include <QObject>
-#include "iqpostman_global.h"
-#include "iqpostmanmime.h"
-
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+IqPostmanAudioContent::IqPostmanAudioContent(QObject *parent) :
+    IqPostmanAttachmentContent(parent),
+    m_contentType(new IqPostmanAudioContentType(this))
 {
-    Q_OBJECT
-public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
+}
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+IqPostmanAudioContent::~IqPostmanAudioContent()
+{
+}
 
-    virtual QString typeName() const = 0;
-
-    bool fromString(const QString &string);
-
-    QString toString() const;
-
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
-
-protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
-
-private:
-    QHash<QString, QString> parseData(const QString &string) const;
-};
-
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+IqPostmanAudioContentType *IqPostmanAudioContent::contentType() const
+{
+    return m_contentType;
+}

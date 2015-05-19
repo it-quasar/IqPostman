@@ -17,13 +17,32 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
+#define BOUNDARY "boundary"
+
 #include "iqpostmanmultipartcontenttype.h"
 #include <QRegExp>
+#include <QStringList>
+
+QHash<IqPostmanMultipartContentType::SubType, QString> IqPostmanMultipartContentType::m_subTypeNames;
+QHash<int, QString> IqPostmanMultipartContentType::m_subTypeIntNames;
 
 IqPostmanMultipartContentType::IqPostmanMultipartContentType(QObject *parent):
     IqPostmanAbstractContentType(parent),
     m_subType(UnknownSubType)
 {
+    if (m_subTypeNames.isEmpty()) {
+        m_subTypeNames[MixedSubType] = QLatin1String("mixed");
+        m_subTypeNames[AlternativeSubType] = QLatin1String("alternative");
+        m_subTypeNames[ParallelSubType] = QLatin1String("parallel");
+        m_subTypeNames[DigestSubType] = QLatin1String("digest");
+        m_subTypeNames[RelatedSubType] = QLatin1String("related");
+
+        QHashIterator<SubType, QString> subTypeI(m_subTypeNames);
+        while (subTypeI.hasNext()) {
+            subTypeI.next();
+            m_subTypeIntNames[subTypeI.key()] = subTypeI.value();
+        }
+    }
 }
 
 IqPostmanMime::ContentType IqPostmanMultipartContentType::type() const
@@ -31,26 +50,14 @@ IqPostmanMime::ContentType IqPostmanMultipartContentType::type() const
     return IqPostmanMime::TypeMultipart;
 }
 
-bool IqPostmanMultipartContentType::fromString(const QString &string)
+QString IqPostmanMultipartContentType::typeName() const
 {
-    QRegExp contetnTypeRx("^Content-Type: multipart\\/(\\w+);\\s*boundary=\"?([^\"]+)\"?$", Qt::CaseInsensitive);
-    if (contetnTypeRx.indexIn(string.trimmed()) == -1)
-        return false;
+    return staticTypeName();
+}
 
-    if (contetnTypeRx.cap(1).compare("mixed", Qt::CaseInsensitive) == 0)
-        setSubType(Mixed);
-    else if (contetnTypeRx.cap(1).compare("alternative", Qt::CaseInsensitive) == 0)
-        setSubType(Alternative);
-    else if (contetnTypeRx.cap(1).compare("parallel", Qt::CaseInsensitive) == 0)
-        setSubType(Parallel);
-    else if (contetnTypeRx.cap(1).compare("digest", Qt::CaseInsensitive) == 0)
-        setSubType(Digest);
-    else
-        return false;
-
-    setBoundary(contetnTypeRx.cap(2));
-
-    return true;
+QString IqPostmanMultipartContentType::staticTypeName()
+{
+    return QLatin1String("multipart");
 }
 
 IqPostmanMultipartContentType::SubType IqPostmanMultipartContentType::subType() const
@@ -79,30 +86,33 @@ void IqPostmanMultipartContentType::setBoundary(const QString &boundary)
     }
 }
 
-
-
-QString IqPostmanMultipartContentType::toString() const
+int IqPostmanMultipartContentType::subTypeNumber() const
 {
-    QString subTypeString;
-    switch (subType()) {
-    case Mixed:
-        subTypeString = "mixed";
-        break;
-    case Alternative:
-        subTypeString = "alternative";
-        break;
-    case Parallel:
-        subTypeString = "parallel";
-        break;
-    case Digest:
-        subTypeString = "digest";
-        break;
-    case UnknownSubType:
-        return "";
-        break;
-    }
+    return m_subType;
+}
 
-    return QString("Content-Type: multipart/%0; boundary=\"%1\"")
-            .arg(subTypeString)
-            .arg(boundary());
+void IqPostmanMultipartContentType::setSubTypeFromNumber(int subTypeNumber)
+{
+    m_subType = static_cast<SubType>(subTypeNumber);
+}
+
+QHash<int, QString> IqPostmanMultipartContentType::subTypeNames() const
+{
+    return m_subTypeIntNames;
+}
+
+bool IqPostmanMultipartContentType::setData(const QHash<QString, QString> &data)
+{
+    setBoundary(data[BOUNDARY]);
+    return true;
+}
+
+QHash<QString, QString> IqPostmanMultipartContentType::data() const
+{
+    QHash<QString, QString> result;
+
+    if (!boundary().isEmpty())
+        result[BOUNDARY] = boundary();
+
+    return result;
 }

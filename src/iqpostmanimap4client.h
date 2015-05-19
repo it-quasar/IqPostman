@@ -43,10 +43,13 @@ public:
     virtual QStringList folders(bool *ok) const Q_DECL_OVERRIDE;
 
     virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const Q_DECL_OVERRIDE;
+                            const QList<QSharedPointer<IqPostmanMail> > &existMails,
+                            QList<QSharedPointer<IqPostmanMail> > *newMails,
+                            QList<QSharedPointer<IqPostmanMail> > *changedMails,
+                            QList<QSharedPointer<IqPostmanMail> > *removedMails) const Q_DECL_OVERRIDE;
+
+    virtual bool loadMailsContent(const QString &folderName,
+                                  const QList<QSharedPointer<IqPostmanMail> > &mails) const Q_DECL_OVERRIDE;
 
 private:
     enum ResponseResult

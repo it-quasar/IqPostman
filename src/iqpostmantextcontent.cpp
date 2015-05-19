@@ -36,34 +36,24 @@ IqPostmanTextContentType *IqPostmanTextContent::contentType() const
     return m_contentType;
 }
 
-bool IqPostmanTextContent::fromString(const QString &string)
+bool IqPostmanTextContent::fromContentData(const IqPostmanContentData &data)
 {
-    QString contentTypeString;
-    QString contentTransferEncodingString;
-    QString contentString;
-    splitContent(string, &contentTypeString, &contentTransferEncodingString, &contentString);
-    if (!m_contentType->fromString(contentTypeString))
-        return false;
-    setTransferEncoding(IqPostmanMime::contentTransferEncodingFromString(contentTransferEncodingString));
+    QByteArray encodedData = decode(data.content, transferEncoding());
 
-    QTextCodec *codec = QTextCodec::codecForName(m_contentType->charset().toLocal8Bit().constData());
+    QTextCodec *codec = QTextCodec::codecForName(contentType()->charset().toLocal8Bit().constData());
     if (codec)
-        setText(codec->toUnicode(decode(contentString, transferEncoding())));
+        setText(codec->toUnicode(encodedData));
     else
-        setText(contentString);
+        setText(encodedData);
 
     return true;
 }
 
-QString IqPostmanTextContent::toString() const
+const IqPostmanContentData IqPostmanTextContent::toContentData() const
 {
-    QString result;
-    result.append(m_contentType->toString());
-    result.append(IqPostmanAbstractClient::crlf());
-    result.append(IqPostmanMime::contentTransferEncodingToString(transferEncoding()));
-    result.append(IqPostmanAbstractClient::crlf());
+    IqPostmanContentData result;
 
-    result.append(encode(text().toLocal8Bit(), transferEncoding()));
+    result.content = encode(text().toLocal8Bit(), transferEncoding());
     return result;
 }
 

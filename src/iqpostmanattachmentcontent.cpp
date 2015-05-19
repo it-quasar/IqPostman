@@ -17,39 +17,50 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#include "iqpostmanattachmentcontent.h"
+#include "iqpostmanabstractclient.h"
 
-#include <QObject>
-#include "iqpostman_global.h"
-#include "iqpostmanmime.h"
-
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+IqPostmanAttachmentContent::IqPostmanAttachmentContent(QObject *parent) :
+    IqPostmanAbstractContent(parent)
 {
-    Q_OBJECT
-public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
+}
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+bool IqPostmanAttachmentContent::fromContentData(const IqPostmanContentData &data)
+{
+    QString content = data.content;
+    if (content.startsWith(IqPostmanAbstractClient::crlf()))
+        content.remove(0, 2);
 
-    virtual QString typeName() const = 0;
+    QByteArray encodedData = decode(content, transferEncoding());
 
-    bool fromString(const QString &string);
+    return setData(encodedData);
+}
 
-    QString toString() const;
+const IqPostmanContentData IqPostmanAttachmentContent::toContentData() const
+{
+    IqPostmanContentData result;
 
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
+    QString content = encode(data(), transferEncoding());
+    content.prepend(IqPostmanAbstractClient::crlf());
 
-protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
+    result.content = content;
 
-private:
-    QHash<QString, QString> parseData(const QString &string) const;
-};
+    return result;
+}
 
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+QByteArray IqPostmanAttachmentContent::data() const
+{
+    return m_data;
+}
+
+bool IqPostmanAttachmentContent::setData(const QByteArray &data)
+{
+    if (m_data != data) {
+        m_data = data;
+        emit dataChanged();
+    }
+
+    return true;
+}
+
+

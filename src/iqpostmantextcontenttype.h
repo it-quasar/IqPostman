@@ -22,6 +22,7 @@
 
 #include "iqpostmanabstractcontenttype.h"
 #include "iqpostman_global.h"
+#include <QHash>
 
 class IQPOSTMANSHARED_EXPORT IqPostmanTextContentType : public IqPostmanAbstractContentType
 {
@@ -33,20 +34,25 @@ public:
     enum SubType
     {
         UnknownSubType,
-        Plain,
-        Richtext,
-        Enriched,
-        TabSeparatedValues,
-        Html
+        PlainSubType,
+        RichtextSubType,
+        EnrichedSubType,
+        TabSeparatedValuesSubType,
+        HtmlSubType
     };
 
     explicit IqPostmanTextContentType(QObject *parent = Q_NULLPTR);
 
     virtual IqPostmanMime::ContentType type() const Q_DECL_OVERRIDE;
+    virtual QString typeName() const Q_DECL_OVERRIDE;
+    static QString staticTypeName();
 
-    virtual bool fromString(const QString &string) Q_DECL_OVERRIDE;
-
-    virtual QString toString() const Q_DECL_OVERRIDE;
+protected:
+    virtual int subTypeNumber() const Q_DECL_OVERRIDE;
+    virtual void setSubTypeFromNumber(int subTypeNumber) Q_DECL_OVERRIDE;
+    virtual QHash<int, QString> subTypeNames() const Q_DECL_OVERRIDE;
+    virtual bool setData(const QHash<QString, QString> &data) Q_DECL_OVERRIDE;
+    virtual QHash<QString, QString> data() const Q_DECL_OVERRIDE;
 
 public:
     SubType subType() const;
@@ -61,6 +67,8 @@ signals:
 
 private:
     SubType m_subType;
+    static QHash<SubType, QString> m_subTypeNames;
+    static QHash<int, QString> m_subTypeIntNames;
     QString m_charset;
 };
 

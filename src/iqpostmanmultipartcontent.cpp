@@ -36,19 +36,11 @@ IqPostmanMultipartContentType *IqPostmanMultipartContent::contentType() const
     return m_contentType;
 }
 
-bool IqPostmanMultipartContent::fromString(const QString &string)
+bool IqPostmanMultipartContent::fromContentData(const IqPostmanContentData &data)
 {
     m_parts.clear();
 
-    QString contentTypeString;
-    QString contentTransferEncodingString;
-    QString contentString;
-    splitContent(string, &contentTypeString, &contentTransferEncodingString, &contentString);
-    if (!m_contentType->fromString(contentTypeString))
-        return false;
-    setTransferEncoding(IqPostmanMime::contentTransferEncodingFromString(contentTransferEncodingString));
-
-    QStringList parts = contentString.split("--" + m_contentType->boundary());
+    QStringList parts = data.content.split("--" + m_contentType->boundary());
     foreach (const QString &part, parts) {
         IqPostmanAbstractContent *content = IqPostmanAbstractContent::createFromString(part);
         if (content) {
@@ -60,21 +52,17 @@ bool IqPostmanMultipartContent::fromString(const QString &string)
     return true;
 }
 
-QString IqPostmanMultipartContent::toString() const
+const IqPostmanContentData IqPostmanMultipartContent::toContentData() const
 {
     Q_ASSERT(!m_contentType->boundary().isEmpty());
 
-    QString result;
-    result.append(m_contentType->toString());
-    result.append(IqPostmanAbstractClient::crlf());
-    result.append(IqPostmanMime::contentTransferEncodingToString(transferEncoding()));
-    result.append(IqPostmanAbstractClient::crlf());
+    IqPostmanContentData result;
 
     foreach (const IqPostmanAbstractContent *part, m_parts) {
-        result.append("--" + m_contentType->boundary() + IqPostmanAbstractClient::crlf());
-        result.append(part->toString());
+        result.content.append("--" + m_contentType->boundary() + IqPostmanAbstractClient::crlf());
+        result.content.append(part->toString());
     }
-    result.append("--" + m_contentType->boundary() + "--" + IqPostmanAbstractClient::crlf());
+    result.content.append("--" + m_contentType->boundary() + "--" + IqPostmanAbstractClient::crlf());
 
     return result;
 }

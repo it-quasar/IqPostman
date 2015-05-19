@@ -144,10 +144,10 @@ QStringList IqPostmanImap4Client::folders(bool *ok) const
 }
 
 bool IqPostmanImap4Client::checkMails(const QString &folderName,
-                                      const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                                      QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                                      QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                                      QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const
+                                      const QList<QSharedPointer<IqPostmanMail> > &existMails,
+                                      QList<QSharedPointer<IqPostmanMail> > *newMails,
+                                      QList<QSharedPointer<IqPostmanMail> > *changedMails,
+                                      QList<QSharedPointer<IqPostmanMail> > *removedMails) const
 {
     newMails->clear();
     changedMails->clear();
@@ -180,6 +180,12 @@ bool IqPostmanImap4Client::checkMails(const QString &folderName,
     if (!ok)
         return false;
 
+    QHash<QString, QSharedPointer<IqPostmanMail> > existMailsHash;
+    foreach (QSharedPointer<IqPostmanMail> mail, existMails) {
+        if (mail)
+            existMailsHash[mail->sourceId()] = mail;
+    }
+
     QHashIterator<QString, IqPostmanMail::MailFlags> flagsI(flags);
     while (flagsI.hasNext()) {
         flagsI.next();
@@ -189,32 +195,46 @@ bool IqPostmanImap4Client::checkMails(const QString &folderName,
             continue;
         }
 
-        if (existMails.contains(flagsI.key())) {
-            QSharedPointer<IqPostmanMail> existMail = existMails[flagsI.key()];
+        if (existMailsHash.contains(flagsI.key())) {
+            QSharedPointer<IqPostmanMail> existMail = existMailsHash[flagsI.key()];
             if (existMail->flags() != flagsI.value()) {
-                if (!changedMails->contains(flagsI.key()))
-                    changedMails->insert(flagsI.key(), existMail);
+                if (!changedMails->contains(existMail))
+                    changedMails->append(existMail);
                 existMail->setFlags(flagsI.value());
             }
         }
     };
 
-    *removedMails = existMails;
+    QHash<QString, QSharedPointer<IqPostmanMail> > removedMailsHash = existMailsHash;
     foreach (const QString &mail, mailsOnServer) {
-        if (!existMails.contains(mail)) {
+        if (!existMailsHash.contains(mail)) {
             QSharedPointer<IqPostmanMail> newMail (new IqPostmanMail);
             newMail->setSourceId(mail);
             newMail->setFlags(flags[mail]);
-            newMails->insert(mail, newMail);
+            newMails->append(newMail);
         } else {
-            removedMails->remove(mail);
+            removedMailsHash.remove(mail);
         }
     }
 
-    if (!loadMailData(folderName, newMails))
-        return false;
+    *removedMails = removedMailsHash.values();
+
+//    if (!loadMailData(folderName, newMails))
+//        return false;
 
     return true;
+}
+
+bool IqPostmanImap4Client::loadMailsContent(const QString &folderName,
+                                            const QList<QSharedPointer<IqPostmanMail> > &mails) const
+{
+    QHash<QString, QSharedPointer<IqPostmanMail> > mailsHash;
+
+    foreach (QSharedPointer<IqPostmanMail> mail, mails) {
+        mailsHash[mail->sourceId()] = mail;
+    }
+
+    return loadMailData(folderName, &mailsHash);
 }
 
 QHash<QString, IqPostmanMail::MailFlags> IqPostmanImap4Client::mailFlags(const QString &folderName, const QStringList &mails, bool *ok) const
@@ -297,7 +317,7 @@ bool IqPostmanImap4Client::fetchMailData(const QString &folderName, QHash<QStrin
     while (mailsI.hasNext()) {
         mailsI.next();
         QString mailUid = mailsI.key();
-        QSharedPointer<IqPostmanMail> mail;
+        QSharedPointer<IqPostmanMail> mail = mailsI.value() ;
         Q_CHECK_PTR(mail);
 
         QString dataStr;

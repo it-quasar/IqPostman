@@ -20,6 +20,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (CMAKE_AUTOMOC ON)
 
 find_package (Qt5Network REQUIRED)
+find_package (Qt5Gui REQUIRED)
 
 file (GLOB SOURCES src/*.cpp)
 source_group ("Source Files" FILES ${SOURCES})
@@ -38,7 +39,7 @@ endif(MINGW)
 
 add_library (${TARGET} SHARED ${SOURCES} ${VERSIONINFO_RES_FILE})
 
-target_link_libraries (${TARGET} Qt5::Network)
+target_link_libraries (${TARGET} Qt5::Network Qt5::Gui)
 
 set_target_properties (${TARGET} PROPERTIES
                        VERSION ${VERSION})

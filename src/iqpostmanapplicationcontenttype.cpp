@@ -17,25 +17,23 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#define CHARSER "charset"
-
-#include "iqpostmantextcontenttype.h"
+#include "iqpostmanapplicationcontenttype.h"
 #include <QRegExp>
 #include <QStringList>
 
-QHash<IqPostmanTextContentType::SubType, QString> IqPostmanTextContentType::m_subTypeNames;
-QHash<int, QString> IqPostmanTextContentType::m_subTypeIntNames;
+QHash<IqPostmanApplicationContentType::SubType, QString> IqPostmanApplicationContentType::m_subTypeNames;
+QHash<int, QString> IqPostmanApplicationContentType::m_subTypeIntNames;
 
-IqPostmanTextContentType::IqPostmanTextContentType(QObject *parent):
+IqPostmanApplicationContentType::IqPostmanApplicationContentType(QObject *parent):
     IqPostmanAbstractContentType(parent),
     m_subType(UnknownSubType)
 {
     if (m_subTypeNames.isEmpty()) {
-        m_subTypeNames[PlainSubType] = QLatin1String("plain");
-        m_subTypeNames[RichtextSubType] = QLatin1String("richtext");
-        m_subTypeNames[EnrichedSubType] = QLatin1String("enriched");
-        m_subTypeNames[TabSeparatedValuesSubType] = QLatin1String("tab-separated-values");
-        m_subTypeNames[HtmlSubType] = QLatin1String("html");
+        m_subTypeNames[OctetStreamSubType] = "octet-stream";
+        m_subTypeNames[PostScriptSubType] = "postscript";
+        m_subTypeNames[RtfSubType] = "rtf";
+        m_subTypeNames[PdfSubType] = "pdf";
+        m_subTypeNames[MswordSubType] = "msword";
 
         QHashIterator<SubType, QString> subTypeI(m_subTypeNames);
         while (subTypeI.hasNext()) {
@@ -45,74 +43,63 @@ IqPostmanTextContentType::IqPostmanTextContentType(QObject *parent):
     }
 }
 
-IqPostmanMime::ContentType IqPostmanTextContentType::type() const
+QString IqPostmanApplicationContentType::imageFormat() const
 {
-    return IqPostmanMime::TypeText;
+    return m_subTypeNames[subType()];
 }
 
-QString IqPostmanTextContentType::typeName() const
+IqPostmanMime::ContentType IqPostmanApplicationContentType::type() const
+{
+    return IqPostmanMime::TypeImage;
+}
+
+QString IqPostmanApplicationContentType::typeName() const
 {
     return staticTypeName();
 }
 
-QString IqPostmanTextContentType::staticTypeName()
+QString IqPostmanApplicationContentType::staticTypeName()
 {
-    return QLatin1String("text");
+    return QLatin1String("image");
 }
 
-IqPostmanTextContentType::SubType IqPostmanTextContentType::subType() const
+IqPostmanApplicationContentType::SubType IqPostmanApplicationContentType::subType() const
 {
     return m_subType;
 }
 
-void IqPostmanTextContentType::setSubType(const SubType &subType)
+void IqPostmanApplicationContentType::setSubType(const SubType &format)
 {
-    if (m_subType != subType) {
-        m_subType = subType;
+    if (m_subType != format) {
+        m_subType = format;
         emit subTypeChanged();
     }
 }
 
-QString IqPostmanTextContentType::charset() const
-{
-    return m_charset;
-}
-
-void IqPostmanTextContentType::setCharset(const QString &charset)
-{
-    if (m_charset != charset) {
-        m_charset = charset;
-        emit charsetChanged();
-    }
-}
-
-int IqPostmanTextContentType::subTypeNumber() const
+int IqPostmanApplicationContentType::subTypeNumber() const
 {
     return m_subType;
 }
 
-void IqPostmanTextContentType::setSubTypeFromNumber(int subTypeNumber)
+void IqPostmanApplicationContentType::setSubTypeFromNumber(int subTypeNumber)
 {
     m_subType = static_cast<SubType>(subTypeNumber);
 }
 
-QHash<int, QString> IqPostmanTextContentType::subTypeNames() const
+QHash<int, QString> IqPostmanApplicationContentType::subTypeNames() const
 {
     return m_subTypeIntNames;
 }
 
-bool IqPostmanTextContentType::setData(const QHash<QString, QString> &data)
+bool IqPostmanApplicationContentType::setData(const QHash<QString, QString> &data)
 {
-    setCharset(data[CHARSER]);
+    Q_UNUSED(data);
     return true;
 }
 
-QHash<QString, QString> IqPostmanTextContentType::data() const
+QHash<QString, QString> IqPostmanApplicationContentType::data() const
 {
     QHash<QString, QString> result;
-
-    if (!charset().isEmpty())
-        result[CHARSER] = charset();
 
     return result;
 }

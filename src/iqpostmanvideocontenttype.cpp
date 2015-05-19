@@ -17,25 +17,20 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#define CHARSER "charset"
-
-#include "iqpostmantextcontenttype.h"
+#include "iqpostmanvideocontenttype.h"
 #include <QRegExp>
 #include <QStringList>
 
-QHash<IqPostmanTextContentType::SubType, QString> IqPostmanTextContentType::m_subTypeNames;
-QHash<int, QString> IqPostmanTextContentType::m_subTypeIntNames;
+QHash<IqPostmanVideoContentType::SubType, QString> IqPostmanVideoContentType::m_subTypeNames;
+QHash<int, QString> IqPostmanVideoContentType::m_subTypeIntNames;
 
-IqPostmanTextContentType::IqPostmanTextContentType(QObject *parent):
+IqPostmanVideoContentType::IqPostmanVideoContentType(QObject *parent):
     IqPostmanAbstractContentType(parent),
     m_subType(UnknownSubType)
 {
     if (m_subTypeNames.isEmpty()) {
-        m_subTypeNames[PlainSubType] = QLatin1String("plain");
-        m_subTypeNames[RichtextSubType] = QLatin1String("richtext");
-        m_subTypeNames[EnrichedSubType] = QLatin1String("enriched");
-        m_subTypeNames[TabSeparatedValuesSubType] = QLatin1String("tab-separated-values");
-        m_subTypeNames[HtmlSubType] = QLatin1String("html");
+        m_subTypeNames[MpegSubType] = "mpeg";
+        m_subTypeNames[QuickTimeSubType] = "quicktime";
 
         QHashIterator<SubType, QString> subTypeI(m_subTypeNames);
         while (subTypeI.hasNext()) {
@@ -45,74 +40,63 @@ IqPostmanTextContentType::IqPostmanTextContentType(QObject *parent):
     }
 }
 
-IqPostmanMime::ContentType IqPostmanTextContentType::type() const
+QString IqPostmanVideoContentType::imageFormat() const
 {
-    return IqPostmanMime::TypeText;
+    return m_subTypeNames[subType()];
 }
 
-QString IqPostmanTextContentType::typeName() const
+IqPostmanMime::ContentType IqPostmanVideoContentType::type() const
+{
+    return IqPostmanMime::TypeImage;
+}
+
+QString IqPostmanVideoContentType::typeName() const
 {
     return staticTypeName();
 }
 
-QString IqPostmanTextContentType::staticTypeName()
+QString IqPostmanVideoContentType::staticTypeName()
 {
-    return QLatin1String("text");
+    return QLatin1String("video");
 }
 
-IqPostmanTextContentType::SubType IqPostmanTextContentType::subType() const
+IqPostmanVideoContentType::SubType IqPostmanVideoContentType::subType() const
 {
     return m_subType;
 }
 
-void IqPostmanTextContentType::setSubType(const SubType &subType)
+void IqPostmanVideoContentType::setSubType(const SubType &format)
 {
-    if (m_subType != subType) {
-        m_subType = subType;
+    if (m_subType != format) {
+        m_subType = format;
         emit subTypeChanged();
     }
 }
 
-QString IqPostmanTextContentType::charset() const
-{
-    return m_charset;
-}
-
-void IqPostmanTextContentType::setCharset(const QString &charset)
-{
-    if (m_charset != charset) {
-        m_charset = charset;
-        emit charsetChanged();
-    }
-}
-
-int IqPostmanTextContentType::subTypeNumber() const
+int IqPostmanVideoContentType::subTypeNumber() const
 {
     return m_subType;
 }
 
-void IqPostmanTextContentType::setSubTypeFromNumber(int subTypeNumber)
+void IqPostmanVideoContentType::setSubTypeFromNumber(int subTypeNumber)
 {
     m_subType = static_cast<SubType>(subTypeNumber);
 }
 
-QHash<int, QString> IqPostmanTextContentType::subTypeNames() const
+QHash<int, QString> IqPostmanVideoContentType::subTypeNames() const
 {
     return m_subTypeIntNames;
 }
 
-bool IqPostmanTextContentType::setData(const QHash<QString, QString> &data)
+bool IqPostmanVideoContentType::setData(const QHash<QString, QString> &data)
 {
-    setCharset(data[CHARSER]);
+    Q_UNUSED(data);
     return true;
 }
 
-QHash<QString, QString> IqPostmanTextContentType::data() const
+QHash<QString, QString> IqPostmanVideoContentType::data() const
 {
     QHash<QString, QString> result;
-
-    if (!charset().isEmpty())
-        result[CHARSER] = charset();
 
     return result;
 }

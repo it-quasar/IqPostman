@@ -17,39 +17,61 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#ifndef IQPOSTMANIMAGECONTENTTYPE_H
+#define IQPOSTMANIMAGECONTENTTYPE_H
 
-#include <QObject>
+#include "iqpostmanabstractcontenttype.h"
 #include "iqpostman_global.h"
-#include "iqpostmanmime.h"
+#include <QHash>
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+class IQPOSTMANSHARED_EXPORT IqPostmanImageContentType : public IqPostmanAbstractContentType
 {
     Q_OBJECT
+    Q_PROPERTY(SubType subType READ subType WRITE setSubType NOTIFY subTypeChanged)
+    Q_ENUMS(SubType)
 public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
+    enum SubType
+    {
+        UnknownSubType,
+        BmpSubType,
+        GifSubType,
+        JpgSubType,
+        JpegSubType,
+        PngSubType,
+        PbmSubType,
+        PgmSubType,
+        PpmSubType,
+        XbmSubType,
+        XpmSubType,
+        SvgSubType
+    };
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+    explicit IqPostmanImageContentType(QObject *parent = Q_NULLPTR);
 
-    virtual QString typeName() const = 0;
+    QString imageFormat() const;
 
-    bool fromString(const QString &string);
-
-    QString toString() const;
-
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
+    virtual IqPostmanMime::ContentType type() const Q_DECL_OVERRIDE;
+    virtual QString typeName() const Q_DECL_OVERRIDE;
+    static QString staticTypeName();
 
 protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
+    virtual int subTypeNumber() const Q_DECL_OVERRIDE;
+    virtual void setSubTypeFromNumber(int subTypeNumber) Q_DECL_OVERRIDE;
+    virtual QHash<int, QString> subTypeNames() const Q_DECL_OVERRIDE;
+    virtual bool setData(const QHash<QString, QString> &data) Q_DECL_OVERRIDE;
+    virtual QHash<QString, QString> data() const Q_DECL_OVERRIDE;
+
+public:
+    SubType subType() const;
+    void setSubType(const SubType &subType);
+
+signals:
+    void subTypeChanged();
 
 private:
-    QHash<QString, QString> parseData(const QString &string) const;
+    SubType m_subType;
+    static QHash<SubType, QString> m_subTypeNames;
+    static QHash<int, QString> m_subTypeIntNames;
 };
 
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+#endif // IQPOSTMANIMAGECONTENTTYPE_H

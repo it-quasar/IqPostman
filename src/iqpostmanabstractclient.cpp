@@ -18,9 +18,11 @@
  **********************************************************************************/
 
 #include "iqpostmanabstractclient.h"
+#include "iqpostmanmail.h"
 #include <QTextCodec>
 #include <QRegExp>
 #include <QByteArray>
+#include <QSharedPointer>
 
 IqPostmanAbstractClient::IqPostmanAbstractClient(QObject *parent) :
     QObject(parent)
@@ -29,6 +31,13 @@ IqPostmanAbstractClient::IqPostmanAbstractClient(QObject *parent) :
 
 IqPostmanAbstractClient::~IqPostmanAbstractClient()
 {
+}
+
+bool IqPostmanAbstractClient::loadMailContent(const QString &folderName, QSharedPointer<IqPostmanMail> mail) const
+{
+    QList<QSharedPointer<IqPostmanMail> > mails;
+    mails << mail;
+    return loadMailsContent(folderName, mails);
 }
 
 QString IqPostmanAbstractClient::crlf()

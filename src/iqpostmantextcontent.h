@@ -34,8 +34,10 @@ public:
     ~IqPostmanTextContent();
 
     virtual IqPostmanTextContentType *contentType() const Q_DECL_OVERRIDE;
-    virtual bool fromString(const QString &string) Q_DECL_OVERRIDE;
-    virtual QString toString() const Q_DECL_OVERRIDE;
+
+protected:
+    virtual bool fromContentData(const IqPostmanContentData &data) Q_DECL_OVERRIDE;
+    virtual const IqPostmanContentData toContentData() const Q_DECL_OVERRIDE;
 
 public:
     QString text() const;

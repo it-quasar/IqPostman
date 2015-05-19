@@ -17,39 +17,59 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#include "iqpostmanimagecontent.h"
+#include "iqpostmanabstractclient.h"
+#include <QBuffer>
 
-#include <QObject>
-#include "iqpostman_global.h"
-#include "iqpostmanmime.h"
-
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+IqPostmanImageContent::IqPostmanImageContent(QObject *parent) :
+    IqPostmanAttachmentContent(parent),
+    m_contentType(new IqPostmanImageContentType(this))
 {
-    Q_OBJECT
-public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
+}
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+IqPostmanImageContent::~IqPostmanImageContent()
+{
+}
 
-    virtual QString typeName() const = 0;
+IqPostmanImageContentType *IqPostmanImageContent::contentType() const
+{
+    return m_contentType;
+}
 
-    bool fromString(const QString &string);
+QImage IqPostmanImageContent::image() const
+{
+    return m_image;
+}
 
-    QString toString() const;
+void IqPostmanImageContent::setImage(const QImage &image)
+{
+    if (m_image != image) {
+        m_image = image;
+        emit imageChanged();
+    }
+}
 
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
 
-protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
+QByteArray IqPostmanImageContent::data() const
+{
+    QByteArray imageData;
+    if (image().isNull())
+        return imageData;
 
-private:
-    QHash<QString, QString> parseData(const QString &string) const;
-};
+    QBuffer buffer(&imageData);
+    if (!buffer.open(QBuffer::WriteOnly))
+        return imageData;
 
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+    image().save(&buffer,m_contentType->imageFormat().toLocal8Bit().constData());
+
+    return imageData;
+}
+
+bool IqPostmanImageContent::setData(const QByteArray &data)
+{
+    QImage image;
+    bool loadResult = image.loadFromData(data, m_contentType->imageFormat().toLocal8Bit().constData());
+    setImage(image);
+
+    return loadResult;
+}

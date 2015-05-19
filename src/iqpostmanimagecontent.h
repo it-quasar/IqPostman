@@ -17,39 +17,39 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#ifndef IQPOSTMANABSTRACTCONTENTTYPE_H
-#define IQPOSTMANABSTRACTCONTENTTYPE_H
+#ifndef IQPOSTMANIMAGECONTENT_H
+#define IQPOSTMANIMAGECONTENT_H
 
-#include <QObject>
+#include "iqpostmanattachmentcontent.h"
+#include "iqpostmanimagecontenttype.h"
 #include "iqpostman_global.h"
-#include "iqpostmanmime.h"
+#include <QImage>
 
-class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
+class IQPOSTMANSHARED_EXPORT IqPostmanImageContent : public IqPostmanAttachmentContent
 {
     Q_OBJECT
+    Q_PROPERTY(IqPostmanImageContentType * contentType READ contentType CONSTANT)
+    Q_PROPERTY(QImage image READ image WRITE setImage NOTIFY imageChanged)
 public:
-    explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
-    virtual ~IqPostmanAbstractContentType();
+    explicit IqPostmanImageContent(QObject *parent = Q_NULLPTR);
+    ~IqPostmanImageContent();
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+    virtual IqPostmanImageContentType *contentType() const Q_DECL_OVERRIDE;
 
-    virtual QString typeName() const = 0;
+public:
+    virtual QByteArray data() const Q_DECL_OVERRIDE;
+    virtual bool setData(const QByteArray &data) Q_DECL_OVERRIDE;
 
-    bool fromString(const QString &string);
+public:
+    QImage image() const;
+    void setImage(const QImage &image);
 
-    QString toString() const;
-
-    static IqPostmanAbstractContentType *createFromString(const QString &string);
-
-protected:
-    virtual int subTypeNumber() const = 0;
-    virtual void setSubTypeFromNumber(int subTypeNumber) = 0;
-    virtual QHash<int, QString> subTypeNames() const = 0;
-    virtual bool setData(const QHash<QString, QString> &data) = 0;
-    virtual QHash<QString, QString> data() const = 0;
+signals:
+    void imageChanged();
 
 private:
-    QHash<QString, QString> parseData(const QString &string) const;
+    IqPostmanImageContentType *m_contentType;
+    QImage m_image;
 };
 
-#endif // IQPOSTMANABSTRACTCONTENTTYPE_H
+#endif // IQPOSTMANIMAGECONTENT_H

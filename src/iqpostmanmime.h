@@ -29,6 +29,7 @@ class IQPOSTMANSHARED_EXPORT IqPostmanMime
     Q_GADGET
     Q_ENUMS(ContentType)
     Q_ENUMS(ContentTransferEncoding)
+    Q_ENUMS(ContentDisposition)
 public:
     enum ContentType
     {
@@ -42,41 +43,12 @@ public:
         TypeApplication
     };
 
-//    enum MessageSubType
-//    {
-//        MessageRfc822,
-//        MessagePartial,
-//        MessageExternalBody
-//    };
-
-//    enum ImageSubType
-//    {
-//        ImageJpg,
-//        ImagePng,
-//        ImageBmp,
-//        ImageTiff
-//    };
-
-//    enum AudioSubType
-//    {
-//        AudioBasic,
-//        AudioMp3
-//    };
-
-//    enum VideoSubType
-//    {
-//        VideoMpeg,
-//        VideoQuicktime
-//    };
-
-//    enum ApplicationSubType
-//    {
-//        ApplicationOctetStream,
-//        ApplicationPostScript,
-//        ApplicationRtf,
-//        ApplicationPdf,
-//        ApplicationMsword
-//    };
+    enum ContentDisposition
+    {
+        DispositionUnknown,
+        DispositionInline,
+        DispositionAttachment
+    };
 
     enum ContentTransferEncoding
     {
@@ -88,11 +60,29 @@ public:
         EncodingBinary
     };
 
-    IqPostmanMime();
+//    enum MessageSubType
+//    {
+//        MessageRfc822,
+//        MessagePartial,
+//        MessageExternalBody
+//    };
+
+//    enum ApplicationSubType
+//    {
+//        ApplicationOctetStream,
+//        ApplicationPostScript,
+//        ApplicationRtf,
+//        ApplicationPdf,
+//        ApplicationMsword
+//    };
 
     static ContentType contentTypeFromString(const QString &string);
+
     static ContentTransferEncoding contentTransferEncodingFromString(const QString &string);
     static QString contentTransferEncodingToString(ContentTransferEncoding encoding);
+
+    static ContentDisposition contentDispositionFromString(const QString &string);
+    static QString contentDispositionToString(ContentDisposition disposition);
 };
 
 #endif // IQPOSTMANMIME_H

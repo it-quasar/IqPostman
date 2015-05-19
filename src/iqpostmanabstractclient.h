@@ -21,6 +21,7 @@
 #define IQPOSTMANABSTRACTCLIENT_H
 
 #include <QObject>
+#include <QSet>
 #include "iqpostmanmail.h"
 #include "iqpostman_global.h"
 
@@ -55,10 +56,16 @@ public:
     virtual QStringList folders(bool *ok) const = 0;
 
     virtual bool checkMails(const QString &folderName,
-                            const QHash<QString, QSharedPointer<IqPostmanMail> > &existMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *newMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *changedMails,
-                            QHash<QString, QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
+                            const QList<QSharedPointer<IqPostmanMail> > &existMails,
+                            QList<QSharedPointer<IqPostmanMail> > *newMails,
+                            QList<QSharedPointer<IqPostmanMail> > *changedMails,
+                            QList<QSharedPointer<IqPostmanMail> > *removedMails) const = 0;
+
+    virtual bool loadMailsContent(const QString &folderName,
+                                  const QList<QSharedPointer<IqPostmanMail> > &mails) const = 0;
+
+    bool loadMailContent(const QString &folderName,
+                         QSharedPointer<IqPostmanMail> mail) const;
 
     static QString crlf();
 };

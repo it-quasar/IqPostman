@@ -17,12 +17,20 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
-#include "iqpostmanmime.h"
-#include <QRegExp>
+#define ENCODING_7BIT "7bit"
+#define ENCODING_QUOTED_PRINABLE "quoted-printable"
+#define ENCODING_BASE64 "base64"
+#define ENCODING_8BIT "8bit"
+#define ENCODING_BINARY "binary"
 
-IqPostmanMime::IqPostmanMime()
-{
-}
+#define DISPOSITION_INLINE "inline"
+#define DISPOSITION_ATTACHMENT "attachment"
+
+#include "iqpostmanmime.h"
+#include "iqpostmanmultipartcontenttype.h"
+#include "iqpostmantextcontenttype.h"
+#include "iqpostmanimagecontenttype.h"
+#include <QRegExp>
 
 IqPostmanMime::ContentType IqPostmanMime::contentTypeFromString(const QString &string)
 {
@@ -30,13 +38,13 @@ IqPostmanMime::ContentType IqPostmanMime::contentTypeFromString(const QString &s
     if (contetnTypeRx.indexIn(string.trimmed()) == -1)
         return TypeUnknown;
 
-    if (contetnTypeRx.cap(1).compare("text", Qt::CaseInsensitive) == 0)
+    if (contetnTypeRx.cap(1).compare(IqPostmanTextContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
         return TypeText;
-    else if (contetnTypeRx.cap(1).compare("multipart", Qt::CaseInsensitive) == 0)
+    else if (contetnTypeRx.cap(1).compare(IqPostmanMultipartContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
         return TypeMultipart;
     else if (contetnTypeRx.cap(1).compare("message", Qt::CaseInsensitive) == 0)
         return TypeMessage;
-    else if (contetnTypeRx.cap(1).compare("image", Qt::CaseInsensitive) == 0)
+    else if (contetnTypeRx.cap(1).compare(IqPostmanImageContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
         return TypeImage;
     else if (contetnTypeRx.cap(1).compare("audio", Qt::CaseInsensitive) == 0)
         return TypeAudio;
@@ -51,22 +59,54 @@ IqPostmanMime::ContentType IqPostmanMime::contentTypeFromString(const QString &s
 
 IqPostmanMime::ContentTransferEncoding IqPostmanMime::contentTransferEncodingFromString(const QString &string)
 {
-    QRegExp contentTransferEncodingRx ("^Content-Transfer-Encoding: (.*)$", Qt::CaseInsensitive);
-    if (contentTransferEncodingRx.indexIn(string.trimmed()) == 0)
-        return IqPostmanMime::Encoding7bit;
+    QRegExp contentTransferEncodingRx ("^Content-Transfer-Encoding: (.*)", Qt::CaseInsensitive);
+    if (contentTransferEncodingRx.indexIn(string.trimmed()) == -1)
+        return EncodingUnknown;
 
-    if (contentTransferEncodingRx.cap(1).compare("7bit", Qt::CaseInsensitive) == 0)
+    if (contentTransferEncodingRx.cap(1).compare(ENCODING_7BIT, Qt::CaseInsensitive) == 0)
         return Encoding7bit;
-    else if (contentTransferEncodingRx.cap(1).compare("quoted-printable", Qt::CaseInsensitive) == 0)
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_QUOTED_PRINABLE, Qt::CaseInsensitive) == 0)
         return EncodingQuotedPrintable;
-    else if (contentTransferEncodingRx.cap(1).compare("base64", Qt::CaseInsensitive) == 0)
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_BASE64, Qt::CaseInsensitive) == 0)
         return EncodingBase64;
-    else if (contentTransferEncodingRx.cap(1).compare("8bit", Qt::CaseInsensitive) == 0)
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_8BIT, Qt::CaseInsensitive) == 0)
         return Encoding8bit;
-    else if (contentTransferEncodingRx.cap(1).compare("binary", Qt::CaseInsensitive) == 0)
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_BINARY, Qt::CaseInsensitive) == 0)
         return EncodingBinary;
 
     return EncodingUnknown;
+}
+
+IqPostmanMime::ContentDisposition IqPostmanMime::contentDispositionFromString(const QString &string)
+{
+    QRegExp contentTransferEncodingRx ("^Content-Disposition: (.*)", Qt::CaseInsensitive);
+    if (contentTransferEncodingRx.indexIn(string.trimmed()) == -1)
+        return DispositionUnknown;
+
+    if (contentTransferEncodingRx.cap(1).compare(DISPOSITION_INLINE, Qt::CaseInsensitive) == 0)
+        return DispositionInline;
+    else if (contentTransferEncodingRx.cap(1).compare(DISPOSITION_ATTACHMENT, Qt::CaseInsensitive) == 0)
+        return DispositionAttachment;
+
+    return DispositionUnknown;
+}
+
+QString IqPostmanMime::contentDispositionToString(IqPostmanMime::ContentDisposition disposition)
+{
+    QString dispositionString;
+    switch (disposition) {
+    case DispositionAttachment:
+        dispositionString = DISPOSITION_INLINE;
+        break;
+    case DispositionInline:
+        dispositionString = DISPOSITION_ATTACHMENT;
+        break;
+    case DispositionUnknown:
+        return "";
+        break;
+    }
+
+    return "Content-Disposition: " + dispositionString;
 }
 
 QString IqPostmanMime::contentTransferEncodingToString(IqPostmanMime::ContentTransferEncoding encoding)
@@ -74,19 +114,19 @@ QString IqPostmanMime::contentTransferEncodingToString(IqPostmanMime::ContentTra
     QString encodingString;
     switch (encoding) {
     case Encoding7bit:
-        encodingString = "7bit";
+        encodingString = ENCODING_7BIT;
         break;
     case EncodingQuotedPrintable:
-        encodingString = "quoted-printable";
+        encodingString = ENCODING_QUOTED_PRINABLE;
         break;
     case EncodingBase64:
-        encodingString = "base64";
+        encodingString = ENCODING_BASE64;
         break;
     case Encoding8bit:
-        encodingString = "8bit";
+        encodingString = ENCODING_8BIT;
         break;
     case EncodingBinary:
-        encodingString = "binary";
+        encodingString = ENCODING_BINARY;
         break;
     case EncodingUnknown:
         return "";
