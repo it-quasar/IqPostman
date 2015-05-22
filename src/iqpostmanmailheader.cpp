@@ -29,7 +29,7 @@
 IqPostmanMailHeader::IqPostmanMailHeader(QObject *parent) :
     QObject(parent),
     m_contentType(Q_NULLPTR),
-    m_contentTransferEncoding(IqPostmanMime::Encoding7bit)
+    m_contentTransferEncoding(IqPostmanAbstractContent::Encoding7bit)
 {
 }
 
@@ -37,10 +37,10 @@ IqPostmanMailHeader::~IqPostmanMailHeader()
 {
 }
 
-void IqPostmanMailHeader::fromString(const QString &string)
+void IqPostmanMailHeader::fromStringList(const QStringList &stringList)
 {
     QStringList headerLines;
-    foreach (const QString &headerRow, string.split(IqPostmanAbstractClient::crlf())) {
+    foreach (const QString &headerRow, stringList) {
         QRegExp newRowRx("^[^ ]+: ");
         if (newRowRx.indexIn(headerRow) != -1)
             headerLines << headerRow.trimmed();
@@ -75,7 +75,7 @@ void IqPostmanMailHeader::fromString(const QString &string)
         } else if (mimeVerstionRx.indexIn(headerRow) != -1)
             setMimeVersion(mimeVerstionRx.cap(1));
         else if (contentTransferEncodingRx.indexIn(headerRow) != -1)
-            setContentTransferEncoding(IqPostmanMime::contentTransferEncodingFromString(headerRow));
+            setContentTransferEncoding(IqPostmanAbstractContent::contentTransferEncodingFromString(headerRow));
         else if (contentTypeRx.indexIn(headerRow) != -1)
             setContentType(IqPostmanAbstractContentType::createFromString(headerRow));
     }
@@ -195,12 +195,12 @@ void IqPostmanMailHeader::setMimeVersion(const QString &mimeVersion)
     }
 }
 
-IqPostmanMime::ContentTransferEncoding IqPostmanMailHeader::contentTransferEncoding() const
+IqPostmanAbstractContent::ContentTransferEncoding IqPostmanMailHeader::contentTransferEncoding() const
 {
     return m_contentTransferEncoding;
 }
 
-void IqPostmanMailHeader::setContentTransferEncoding(const IqPostmanMime::ContentTransferEncoding &contentTransferEncoding)
+void IqPostmanMailHeader::setContentTransferEncoding(const IqPostmanAbstractContent::ContentTransferEncoding &contentTransferEncoding)
 {
     if (m_contentTransferEncoding != contentTransferEncoding) {
         m_contentTransferEncoding = contentTransferEncoding;

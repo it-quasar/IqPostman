@@ -45,9 +45,9 @@ QString IqPostmanVideoContentType::imageFormat() const
     return m_subTypeNames[subType()];
 }
 
-IqPostmanMime::ContentType IqPostmanVideoContentType::type() const
+IqPostmanAbstractContentType::ContentType IqPostmanVideoContentType::type() const
 {
-    return IqPostmanMime::TypeImage;
+    return TypeVideo;
 }
 
 QString IqPostmanVideoContentType::typeName() const

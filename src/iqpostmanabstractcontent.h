@@ -24,52 +24,70 @@
 #include "iqpostman_global.h"
 #include "iqpostmanabstractcontenttype.h"
 #include "iqpostmancontentdata.h"
+#include "iqpostmancontentdisposition.h"
 
 class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContent: public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(IqPostmanMime::ContentTransferEncoding transferEncoding READ transferEncoding WRITE setTransferEncoding NOTIFY transferEncodingChanged)
-    Q_PROPERTY(IqPostmanMime::ContentDisposition disposition READ disposition WRITE setDisposition NOTIFY dispositionChanged)
+    Q_PROPERTY(QString contentId READ contentId WRITE setContentId NOTIFY contentIdChanged)
+    Q_PROPERTY(ContentTransferEncoding transferEncoding READ transferEncoding WRITE setTransferEncoding NOTIFY transferEncodingChanged)
+    Q_PROPERTY(IqPostmanContentDisposition *contentDisposition READ contentDisposition CONSTANT)
+    Q_ENUMS(ContentTransferEncoding)
 public:
+    enum ContentTransferEncoding
+    {
+        EncodingUnknown,
+        Encoding7bit,
+        EncodingQuotedPrintable,
+        EncodingBase64,
+        Encoding8bit,
+        EncodingBinary
+    };
     explicit IqPostmanAbstractContent(QObject *parent = Q_NULLPTR);
     virtual ~IqPostmanAbstractContent();
 
     virtual IqPostmanAbstractContentType *contentType() const = 0;
 
-    bool fromString(const QString &string);
-    QString toString() const;
+    bool fromStringList(const QStringList &stringList);
+    QStringList toStringList() const;
 
-    static IqPostmanAbstractContent *createFromString(const QString &string);
+    static IqPostmanAbstractContent *createFromStringList(const QStringList &stringList);
+
+    static ContentTransferEncoding contentTransferEncodingFromString(const QString &string);
+    static QString contentTransferEncodingToString(ContentTransferEncoding encoding);
 
 protected:
     virtual bool fromContentData(const IqPostmanContentData &data) = 0;
     virtual const IqPostmanContentData toContentData() const = 0;
 
-    static QByteArray decode(const QString &string,
-                             IqPostmanMime::ContentTransferEncoding transferEncoding);
+    static QByteArray decode(const QStringList &stringList,
+                             IqPostmanAbstractContent::ContentTransferEncoding transferEncoding);
 
-    static QString encode(const QByteArray &data,
-                          IqPostmanMime::ContentTransferEncoding transferEncoding);
+    static QStringList encode(const QByteArray &data,
+                              IqPostmanAbstractContent::ContentTransferEncoding transferEncoding);
 
 public:
-    IqPostmanMime::ContentTransferEncoding transferEncoding() const;
-    void setTransferEncoding(IqPostmanMime::ContentTransferEncoding transferEncoding);
+    ContentTransferEncoding transferEncoding() const;
+    void setTransferEncoding(ContentTransferEncoding transferEncoding);
 
-    IqPostmanMime::ContentDisposition disposition() const;
-    void setDisposition(const IqPostmanMime::ContentDisposition &disposition);
+    IqPostmanContentDisposition *contentDisposition() const;
+
+    QString contentId() const;
+    void setContentId(const QString &contentId);
 
 signals:
+    void contentIdChanged();
     void transferEncodingChanged();
-    void dispositionChanged();
 
 private:
-    static const IqPostmanContentData splitContent(const QString &string);
-    static QByteArray fromQuotedPrintable(const QString &string);
-    static QString toQuotedPrintable(const QByteArray &data);
+    static const IqPostmanContentData splitContent(const QStringList &stringList);
+    static QByteArray fromQuotedPrintable(const QStringList &stringList);
+    static QStringList toQuotedPrintable(const QByteArray &data);
 
 private:
-    IqPostmanMime::ContentTransferEncoding m_contentTransferEncoding;
-    IqPostmanMime::ContentDisposition m_disposition;
+    QString m_contentId;
+    ContentTransferEncoding m_contentTransferEncoding;
+    IqPostmanContentDisposition *m_contentDisposition;
 };
 
 #endif // IQPOSTMANABSTRACTCONTENT_H

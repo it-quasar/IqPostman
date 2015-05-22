@@ -25,7 +25,7 @@
 #include <QSharedData>
 #include "iqpostmanabstractcontenttype.h"
 #include "iqpostman_global.h"
-#include "iqpostmanmime.h"
+#include "iqpostmanabstractcontent.h"
 
 class IQPOSTMANSHARED_EXPORT IqPostmanMailHeader : public QObject
 {
@@ -37,13 +37,13 @@ class IQPOSTMANSHARED_EXPORT IqPostmanMailHeader : public QObject
     Q_PROPERTY(QString cc READ cc WRITE setCc NOTIFY ccChanged)
     Q_PROPERTY(QDateTime date READ date WRITE setDate NOTIFY dateChanged)
     Q_PROPERTY(QString mimeVersion READ mimeVersion WRITE setMimeVersion NOTIFY mimeVersionChanged)
-    Q_PROPERTY(IqPostmanMime::ContentTransferEncoding contentTransferEncoding READ contentTransferEncoding WRITE setContentTransferEncoding NOTIFY contentTransferEncodingChanged)
+    Q_PROPERTY(IqPostmanAbstractContent::ContentTransferEncoding contentTransferEncoding READ contentTransferEncoding WRITE setContentTransferEncoding NOTIFY contentTransferEncodingChanged)
     Q_PROPERTY(IqPostmanAbstractContentType * contentType READ contentType WRITE setContentType NOTIFY contentTypeChanged)
 public:
     explicit IqPostmanMailHeader(QObject *parent = Q_NULLPTR);
     ~IqPostmanMailHeader();
 
-    void fromString(const QString &string);
+    void fromStringList(const QStringList &stringList);
 
 public:
     QString messageId() const;
@@ -67,8 +67,8 @@ public:
     QString mimeVersion() const;
     void setMimeVersion(const QString &mimeVersion);
 
-    IqPostmanMime::ContentTransferEncoding contentTransferEncoding() const;
-    void setContentTransferEncoding(const IqPostmanMime::ContentTransferEncoding &contentTransferEncoding);
+    IqPostmanAbstractContent::ContentTransferEncoding contentTransferEncoding() const;
+    void setContentTransferEncoding(const IqPostmanAbstractContent::ContentTransferEncoding &contentTransferEncoding);
 
     IqPostmanAbstractContentType* contentType() const;
     void setContentType(IqPostmanAbstractContentType* contentType);
@@ -96,7 +96,7 @@ private:
     QString m_cc;
     QDateTime m_date;
     QString m_mimeVersion;
-    IqPostmanMime::ContentTransferEncoding m_contentTransferEncoding;
+    IqPostmanAbstractContent::ContentTransferEncoding m_contentTransferEncoding;
 };
 
 

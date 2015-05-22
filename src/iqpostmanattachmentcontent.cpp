@@ -25,13 +25,14 @@ IqPostmanAttachmentContent::IqPostmanAttachmentContent(QObject *parent) :
 {
 }
 
+QString IqPostmanAttachmentContent::format() const
+{
+    return "";
+}
+
 bool IqPostmanAttachmentContent::fromContentData(const IqPostmanContentData &data)
 {
-    QString content = data.content;
-    if (content.startsWith(IqPostmanAbstractClient::crlf()))
-        content.remove(0, 2);
-
-    QByteArray encodedData = decode(content, transferEncoding());
+    QByteArray encodedData = decode(data.content, transferEncoding());
 
     return setData(encodedData);
 }
@@ -40,10 +41,7 @@ const IqPostmanContentData IqPostmanAttachmentContent::toContentData() const
 {
     IqPostmanContentData result;
 
-    QString content = encode(data(), transferEncoding());
-    content.prepend(IqPostmanAbstractClient::crlf());
-
-    result.content = content;
+    result.content = encode(data(), transferEncoding());
 
     return result;
 }

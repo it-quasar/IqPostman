@@ -71,15 +71,13 @@ private:
                                                        const QStringList &mails,
                                                        bool *ok) const;
 
-    bool loadMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails) const;
-
     enum MailData
     {
         Header,
         Content
     };
 
-    bool fetchMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails, MailData data) const;
+    bool fetchMailData(const QString &folderName, const QList<QSharedPointer<IqPostmanMail> > &mails, MailData data) const;
 
     QString utf7Decode(const QString &string) const;
     QString utf7Encode(const QString &string) const;
@@ -87,6 +85,7 @@ private:
 private:
     QSslSocket *m_socket;
     mutable qint64 m_currentTagId;
+    static bool m_randInitiated;
 };
 
 

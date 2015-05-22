@@ -44,7 +44,7 @@ public:
 
     QString imageFormat() const;
 
-    virtual IqPostmanMime::ContentType type() const Q_DECL_OVERRIDE;
+    virtual IqPostmanAbstractContentType::ContentType type() const Q_DECL_OVERRIDE;
     virtual QString typeName() const Q_DECL_OVERRIDE;
     static QString staticTypeName();
 

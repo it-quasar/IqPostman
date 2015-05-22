@@ -48,9 +48,9 @@ QString IqPostmanApplicationContentType::imageFormat() const
     return m_subTypeNames[subType()];
 }
 
-IqPostmanMime::ContentType IqPostmanApplicationContentType::type() const
+IqPostmanAbstractContentType::ContentType IqPostmanApplicationContentType::type() const
 {
-    return IqPostmanMime::TypeImage;
+    return TypeApplication;
 }
 
 QString IqPostmanApplicationContentType::typeName() const
@@ -60,7 +60,7 @@ QString IqPostmanApplicationContentType::typeName() const
 
 QString IqPostmanApplicationContentType::staticTypeName()
 {
-    return QLatin1String("image");
+    return QLatin1String("application");
 }
 
 IqPostmanApplicationContentType::SubType IqPostmanApplicationContentType::subType() const

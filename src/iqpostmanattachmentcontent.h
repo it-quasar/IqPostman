@@ -31,6 +31,8 @@ class IQPOSTMANSHARED_EXPORT IqPostmanAttachmentContent : public IqPostmanAbstra
 public:
     explicit IqPostmanAttachmentContent(QObject *parent = Q_NULLPTR);
 
+    virtual QString format() const;
+
 protected:
     virtual bool fromContentData(const IqPostmanContentData &data) Q_DECL_OVERRIDE;
     virtual const IqPostmanContentData toContentData() const Q_DECL_OVERRIDE;

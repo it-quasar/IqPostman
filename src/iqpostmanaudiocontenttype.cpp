@@ -45,9 +45,9 @@ QString IqPostmanAudioContentType::imageFormat() const
     return m_subTypeNames[subType()];
 }
 
-IqPostmanMime::ContentType IqPostmanAudioContentType::type() const
+IqPostmanAbstractContentType::ContentType IqPostmanAudioContentType::type() const
 {
-    return IqPostmanMime::TypeImage;
+    return TypeAudio;
 }
 
 QString IqPostmanAudioContentType::typeName() const

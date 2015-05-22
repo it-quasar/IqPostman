@@ -36,6 +36,8 @@ public:
 
     virtual IqPostmanImageContentType *contentType() const Q_DECL_OVERRIDE;
 
+    virtual QString format() const Q_DECL_OVERRIDE;
+
 public:
     virtual QByteArray data() const Q_DECL_OVERRIDE;
     virtual bool setData(const QByteArray &data) Q_DECL_OVERRIDE;

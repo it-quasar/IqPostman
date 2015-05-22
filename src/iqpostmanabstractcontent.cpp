@@ -17,6 +17,12 @@
  * along with IqPostman.  If not, see <http://www.gnu.org/licenses/>.             *
  **********************************************************************************/
 
+#define ENCODING_7BIT "7bit"
+#define ENCODING_QUOTED_PRINABLE "quoted-printable"
+#define ENCODING_BASE64 "base64"
+#define ENCODING_8BIT "8bit"
+#define ENCODING_BINARY "binary"
+
 #include "iqpostmanabstractcontent.h"
 #include <QRegExp>
 #include <QStringList>
@@ -30,8 +36,8 @@
 
 IqPostmanAbstractContent::IqPostmanAbstractContent(QObject *parent):
     QObject(parent),
-    m_contentTransferEncoding(IqPostmanMime::EncodingUnknown),
-    m_disposition(IqPostmanMime::DispositionUnknown)
+    m_contentTransferEncoding(EncodingUnknown),
+    m_contentDisposition(new IqPostmanContentDisposition(this))
 {
 }
 
@@ -39,95 +45,108 @@ IqPostmanAbstractContent::~IqPostmanAbstractContent()
 {
 }
 
-bool IqPostmanAbstractContent::fromString(const QString &string)
+bool IqPostmanAbstractContent::fromStringList(const QStringList &stringList)
 {
-    IqPostmanContentData contentData = splitContent(string);
+    IqPostmanContentData contentData = splitContent(stringList);
     if (!contentType()->fromString(contentData.contentType))
         return false;
-    setTransferEncoding(IqPostmanMime::contentTransferEncodingFromString(contentData.contentTransferEncoding));
-    setDisposition(IqPostmanMime::contentDispositionFromString(contentData.contentDisposition));
+    if (!contentDisposition()->fromString(contentData.contentDisposition))
+        return false;
+
+    setTransferEncoding(IqPostmanAbstractContent::contentTransferEncodingFromString(contentData.contentTransferEncoding));
+
+    if (!contentData.contentId.isEmpty()) {
+        QRegExp contentIdRx ("^Content-ID: <([^>]+)>", Qt::CaseInsensitive);
+        contentIdRx.indexIn(contentData.contentId);
+        setContentId(contentIdRx.cap(1));
+    }
 
     return fromContentData(contentData);
 }
 
-QString IqPostmanAbstractContent::toString() const
+QStringList IqPostmanAbstractContent::toStringList() const
 {
     IqPostmanContentData contentData = toContentData();
 
-    QString result;
+    QStringList result;
     result.append(contentType()->toString());
-    result.append(IqPostmanAbstractClient::crlf());
-    if (transferEncoding() != IqPostmanMime::EncodingUnknown) {
-        result.append(IqPostmanMime::contentTransferEncodingToString(transferEncoding()));
-        result.append(IqPostmanAbstractClient::crlf());
-    }
-    if (disposition() != IqPostmanMime::DispositionUnknown) {
-        result.append(IqPostmanMime::contentDispositionToString(disposition()));
-        result.append(IqPostmanAbstractClient::crlf());
-    }
+    result.append(contentDisposition()->toString());
+
+    if (!contentId().isEmpty())
+        result.append(QString("Content-ID: <%0>")
+                      .arg(contentId()));
+
+    if (transferEncoding() != IqPostmanAbstractContent::EncodingUnknown)
+        result.append(IqPostmanAbstractContent::contentTransferEncodingToString(transferEncoding()));
+
+    result.append("");
+
     result.append(contentData.content);
 
     return result;
 }
 
-IqPostmanAbstractContent *IqPostmanAbstractContent::createFromString(const QString &string)
+IqPostmanAbstractContent *IqPostmanAbstractContent::createFromStringList(const QStringList &stringList)
 {
-    switch (IqPostmanMime::contentTypeFromString(string)) {
-    case IqPostmanMime::TypeText: {
+    if (stringList.isEmpty())
+        return Q_NULLPTR;
+
+    switch (IqPostmanAbstractContentType::contentTypeFromString(stringList.first())) {
+    case IqPostmanAbstractContentType::TypeText: {
         IqPostmanTextContent *result = new IqPostmanTextContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeMultipart: {
+    case IqPostmanAbstractContentType::TypeMultipart: {
         IqPostmanMultipartContent *result = new IqPostmanMultipartContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeImage: {
+    case IqPostmanAbstractContentType::TypeImage: {
         IqPostmanImageContent *result = new IqPostmanImageContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeAudio: {
+    case IqPostmanAbstractContentType::TypeAudio: {
         IqPostmanAudioContent *result = new IqPostmanAudioContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeVideo: {
+    case IqPostmanAbstractContentType::TypeVideo: {
         IqPostmanVideoContent *result = new IqPostmanVideoContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeApplication: {
+    case IqPostmanAbstractContentType::TypeApplication: {
         IqPostmanApplicationContent *result = new IqPostmanApplicationContent();
-        if (result->fromString(string))
+        if (result->fromStringList(stringList))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeUnknown:
+    case IqPostmanAbstractContentType::TypeUnknown:
         break;
     }
 
     return Q_NULLPTR;
 }
 
-IqPostmanMime::ContentTransferEncoding IqPostmanAbstractContent::transferEncoding() const
+IqPostmanAbstractContent::ContentTransferEncoding IqPostmanAbstractContent::transferEncoding() const
 {
     return m_contentTransferEncoding;
 }
 
-void IqPostmanAbstractContent::setTransferEncoding(IqPostmanMime::ContentTransferEncoding transferEncoding)
+void IqPostmanAbstractContent::setTransferEncoding(ContentTransferEncoding transferEncoding)
 {
     if (m_contentTransferEncoding != transferEncoding) {
         m_contentTransferEncoding = transferEncoding;
@@ -135,24 +154,14 @@ void IqPostmanAbstractContent::setTransferEncoding(IqPostmanMime::ContentTransfe
     }
 }
 
-IqPostmanMime::ContentDisposition IqPostmanAbstractContent::disposition() const
+IqPostmanContentDisposition *IqPostmanAbstractContent::contentDisposition() const
 {
-    return m_disposition;
+    return m_contentDisposition;
 }
 
-void IqPostmanAbstractContent::setDisposition(const IqPostmanMime::ContentDisposition &disposition)
-{
-    if (m_disposition != disposition) {
-        m_disposition = disposition;
-        emit dispositionChanged();
-    }
-}
-
-const IqPostmanContentData IqPostmanAbstractContent::splitContent(const QString &string)
+const IqPostmanContentData IqPostmanAbstractContent::splitContent(const QStringList &stringList)
 {
     IqPostmanContentData result;
-
-    QStringList lines = string.trimmed().split(IqPostmanAbstractClient::crlf());
 
     QRegExp contentTypeRx ("^Content-Type: .*", Qt::CaseInsensitive);
     QRegExp contentTransferEncodingRx ("^Content-Transfer-Encoding: .*", Qt::CaseInsensitive);
@@ -160,62 +169,62 @@ const IqPostmanContentData IqPostmanAbstractContent::splitContent(const QString 
     QRegExp contentIdRx ("^Content-ID: .*", Qt::CaseInsensitive);
     QRegExp safeTransferRx ("^\\s+.*");
 
-    bool contentStart = false;
     QString *currentField = Q_NULLPTR;
-    foreach (const QString &line, lines) {
-        if (!contentStart) {
-            if (contentTypeRx.indexIn(line) != -1) {
-                currentField = &(result.contentType);
-                currentField->append(line + IqPostmanAbstractClient::crlf());
+    int i = -1;
+    foreach (const QString &line, stringList) {
+        ++i;
+        if (line.isEmpty()) {
+            result.content = stringList.mid(i + 1);
+            break;
+        }
+        if (contentTypeRx.indexIn(line) != -1) {
+            currentField = &(result.contentType);
+            currentField->append(line);
+            continue;
+        }
+        if (contentTransferEncodingRx.indexIn(line) != -1) {
+            currentField = &(result.contentTransferEncoding);
+            currentField->append(line);
+            continue;
+        }
+        if (contentDispositionRx.indexIn(line) != -1) {
+            currentField = &(result.contentDisposition);
+            currentField->append(line);
+            continue;
+        }
+        if (contentIdRx.indexIn(line) != -1) {
+            currentField = &(result.contentId);
+            currentField->append(line);
+            continue;
+        }
+        if(safeTransferRx.indexIn(line) != -1) {
+            if (currentField) {
+                currentField->append(line);
                 continue;
             }
-            if (contentTransferEncodingRx.indexIn(line) != -1) {
-                currentField = &(result.contentTransferEncoding);
-                currentField->append(line + IqPostmanAbstractClient::crlf());
-                continue;
-            }
-            if (contentDispositionRx.indexIn(line) != -1) {
-                currentField = &(result.contentDisposition);
-                currentField->append(line + IqPostmanAbstractClient::crlf());
-                continue;
-            }
-            if (contentIdRx.indexIn(line) != -1) {
-                currentField = &(result.contentId);
-                currentField->append(line + IqPostmanAbstractClient::crlf());
-                continue;
-            }
-            if(safeTransferRx.indexIn(line) != -1) {
-                if (currentField) {
-                    currentField->append(line + IqPostmanAbstractClient::crlf());
-                    continue;
-                }
-            }
-            contentStart = true;
-            result.content.append(line + IqPostmanAbstractClient::crlf());
-        } else
-            result.content.append(line + IqPostmanAbstractClient::crlf());
+        }
     }
 
     return result;
 }
 
-QByteArray IqPostmanAbstractContent::decode(const QString &string, IqPostmanMime::ContentTransferEncoding transferEncoding)
+QByteArray IqPostmanAbstractContent::decode(const QStringList &stringList, IqPostmanAbstractContent::ContentTransferEncoding transferEncoding)
 {
     switch (transferEncoding)
     {
-    case IqPostmanMime::Encoding7bit:
-    case IqPostmanMime::Encoding8bit:
-    case IqPostmanMime::EncodingBinary:
-    case IqPostmanMime::EncodingUnknown: {
-        return QByteArray(string.toLocal8Bit().constData());
+    case IqPostmanAbstractContent::Encoding7bit:
+    case IqPostmanAbstractContent::Encoding8bit:
+    case IqPostmanAbstractContent::EncodingBinary:
+    case IqPostmanAbstractContent::EncodingUnknown: {
+        return QByteArray(stringList.join(IqPostmanAbstractClient::crlf()).toLocal8Bit().constData());
         break;
     }
-    case IqPostmanMime::EncodingBase64: {
-        return QByteArray::fromBase64(string.toLocal8Bit().constData());
+    case IqPostmanAbstractContent::EncodingBase64: {
+        return QByteArray::fromBase64(stringList.join(IqPostmanAbstractClient::crlf()).toLocal8Bit().constData());
         break;
     }
-    case IqPostmanMime::EncodingQuotedPrintable: {
-        return fromQuotedPrintable(string);
+    case IqPostmanAbstractContent::EncodingQuotedPrintable: {
+        return fromQuotedPrintable(stringList);
         break;
     }
     }
@@ -223,49 +232,52 @@ QByteArray IqPostmanAbstractContent::decode(const QString &string, IqPostmanMime
     return QByteArray();
 }
 
-QString IqPostmanAbstractContent::encode(const QByteArray &data, IqPostmanMime::ContentTransferEncoding transferEncoding)
+QStringList IqPostmanAbstractContent::encode(const QByteArray &data, IqPostmanAbstractContent::ContentTransferEncoding transferEncoding)
 {
     switch (transferEncoding)
     {
-    case IqPostmanMime::Encoding7bit:
-    case IqPostmanMime::Encoding8bit:
-    case IqPostmanMime::EncodingBinary:
-    case IqPostmanMime::EncodingUnknown: {
-        return QString(data);
+    case IqPostmanAbstractContent::Encoding7bit:
+    case IqPostmanAbstractContent::Encoding8bit:
+    case IqPostmanAbstractContent::EncodingBinary:
+    case IqPostmanAbstractContent::EncodingUnknown: {
+        return QString(data).split(IqPostmanAbstractClient::crlf());
         break;
     }
-    case IqPostmanMime::EncodingBase64: {
-        return data.toBase64();
+    case IqPostmanAbstractContent::EncodingBase64: {
+        return QString(data.toBase64()).split(IqPostmanAbstractClient::crlf());
         break;
     }
-    case IqPostmanMime::EncodingQuotedPrintable: {
+    case IqPostmanAbstractContent::EncodingQuotedPrintable: {
         return toQuotedPrintable(data);
         break;
     }
     }
 
-    return "";
+    return QStringList();
 }
 
-QByteArray IqPostmanAbstractContent::fromQuotedPrintable(const QString &string)
+QByteArray IqPostmanAbstractContent::fromQuotedPrintable(const QStringList &stringList)
 {
-    QStringList sourceLines = string.split("\r\n");
     QStringList lines;
     bool safeTransfer = false;
-    foreach(const QString &line, sourceLines) {
+    foreach(const QString &line, stringList) {
+        QString lineToAdd = line;
+        if (line.right(1) == "=")
+            lineToAdd.remove(lineToAdd.length() - 1, 1);
+
         if (safeTransfer)
-            lines.last().append(line.left(line.length() - 1));
+            lines.last().append(lineToAdd);
         else
-            lines.append(line);
+            lines.append(lineToAdd);
 
         if (line.right(1) == "=")
             safeTransfer = true;
-        else
+         else
             safeTransfer = false;
     }
 
     QByteArray result;
-    foreach(const QString &line, sourceLines) {
+    foreach(const QString &line, lines) {
         for (int i = 0; i < line.length(); ++i) {
             if (line[i] == '=') {
                 if (i < line.length() - 2) {
@@ -284,31 +296,91 @@ QByteArray IqPostmanAbstractContent::fromQuotedPrintable(const QString &string)
     return result;
 }
 
-QString IqPostmanAbstractContent::toQuotedPrintable(const QByteArray &data)
+QStringList IqPostmanAbstractContent::toQuotedPrintable(const QByteArray &data)
 {
     QString encoded;
     for (int i = 0; i < data.length(); ++i) {
-        if (data.at(i) == QChar(QChar::CarriageReturn).toLatin1()
-                && i < data.length() - 1
-                && data.at(i + 1) == QChar(QChar::LineFeed).toLatin1()) {
+        if (data.mid(i, 2) == IqPostmanAbstractClient::crlf()) {
             encoded.append(IqPostmanAbstractClient::crlf());
             ++i;
         } else
             encoded.append("=" + data.mid(i, 1).toHex());
     }
 
-    QString result;
+    QStringList result;
     QStringList lines = encoded.split(IqPostmanAbstractClient::crlf());
     foreach(QString line, lines) {
         while (!line.isEmpty()) {
             if (line.length() > 76)
-                result.append(line.left(76) + "=" + IqPostmanAbstractClient::crlf());
+                result.append(line.left(76) + "=");
             else
-                result.append(line + IqPostmanAbstractClient::crlf());
+                result.append(line);
 
             line.remove(0, 76);
         }
     }
 
     return result;
+}
+
+QString IqPostmanAbstractContent::contentId() const
+{
+    return m_contentId;
+}
+
+void IqPostmanAbstractContent::setContentId(const QString &contentId)
+{
+    if (m_contentId != contentId) {
+        m_contentId = contentId;
+        emit contentIdChanged();
+    }
+}
+
+
+IqPostmanAbstractContent::ContentTransferEncoding IqPostmanAbstractContent::contentTransferEncodingFromString(const QString &string)
+{
+    QRegExp contentTransferEncodingRx ("^Content-Transfer-Encoding: \"?([^\";]*)\"?", Qt::CaseInsensitive);
+    if (contentTransferEncodingRx.indexIn(string.trimmed()) == -1)
+        return EncodingUnknown;
+
+    if (contentTransferEncodingRx.cap(1).compare(ENCODING_7BIT, Qt::CaseInsensitive) == 0)
+        return Encoding7bit;
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_QUOTED_PRINABLE, Qt::CaseInsensitive) == 0)
+        return EncodingQuotedPrintable;
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_BASE64, Qt::CaseInsensitive) == 0)
+        return EncodingBase64;
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_8BIT, Qt::CaseInsensitive) == 0)
+        return Encoding8bit;
+    else if (contentTransferEncodingRx.cap(1).compare(ENCODING_BINARY, Qt::CaseInsensitive) == 0)
+        return EncodingBinary;
+
+    return EncodingUnknown;
+}
+
+
+QString IqPostmanAbstractContent::contentTransferEncodingToString(ContentTransferEncoding encoding)
+{
+    QString encodingString;
+    switch (encoding) {
+    case Encoding7bit:
+        encodingString = ENCODING_7BIT;
+        break;
+    case EncodingQuotedPrintable:
+        encodingString = ENCODING_QUOTED_PRINABLE;
+        break;
+    case EncodingBase64:
+        encodingString = ENCODING_BASE64;
+        break;
+    case Encoding8bit:
+        encodingString = ENCODING_8BIT;
+        break;
+    case EncodingBinary:
+        encodingString = ENCODING_BINARY;
+        break;
+    case EncodingUnknown:
+        return "";
+        break;
+    }
+
+    return "Content-Transfer-Encoding: " + encodingString;
 }

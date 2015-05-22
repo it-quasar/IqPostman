@@ -20,11 +20,17 @@
 #include "iqpostmanimap4client.h"
 #include <QTextCodec>
 
+bool IqPostmanImap4Client::m_randInitiated = false;
+
 IqPostmanImap4Client::IqPostmanImap4Client(QObject *parent) :
     IqPostmanAbstractClient(parent),
     m_socket(new QSslSocket(this)),
     m_currentTagId(0)
 {
+    if (!m_randInitiated) {
+        qsrand(QDateTime::currentMSecsSinceEpoch());
+        m_randInitiated = true;
+    }
 }
 
 IqPostmanImap4Client::~IqPostmanImap4Client()
@@ -228,13 +234,12 @@ bool IqPostmanImap4Client::checkMails(const QString &folderName,
 bool IqPostmanImap4Client::loadMailsContent(const QString &folderName,
                                             const QList<QSharedPointer<IqPostmanMail> > &mails) const
 {
-    QHash<QString, QSharedPointer<IqPostmanMail> > mailsHash;
+    if (!fetchMailData(folderName, mails, Header))
+        return false;
+    if (!fetchMailData(folderName, mails, Content))
+        return false;
 
-    foreach (QSharedPointer<IqPostmanMail> mail, mails) {
-        mailsHash[mail->sourceId()] = mail;
-    }
-
-    return loadMailData(folderName, &mailsHash);
+    return true;
 }
 
 QHash<QString, IqPostmanMail::MailFlags> IqPostmanImap4Client::mailFlags(const QString &folderName, const QStringList &mails, bool *ok) const
@@ -292,19 +297,9 @@ QHash<QString, IqPostmanMail::MailFlags> IqPostmanImap4Client::mailFlags(const Q
     return result;
 }
 
-bool IqPostmanImap4Client::loadMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails) const
+bool IqPostmanImap4Client::fetchMailData(const QString &folderName, const QList<QSharedPointer<IqPostmanMail> > &mails, MailData data) const
 {
-    if (!fetchMailData(folderName, mails, Header))
-        return false;
-    if (!fetchMailData(folderName, mails, Content))
-        return false;
-
-    return true;
-}
-
-bool IqPostmanImap4Client::fetchMailData(const QString &folderName, QHash<QString, QSharedPointer<IqPostmanMail> > *mails, MailData data) const
-{
-    if (mails->isEmpty())
+    if (mails.isEmpty())
         return true;
 
     if (!selectFolder(folderName))
@@ -313,12 +308,12 @@ bool IqPostmanImap4Client::fetchMailData(const QString &folderName, QHash<QStrin
     if (m_socket->state() != QSslSocket::ConnectedState)
         return false;
 
-    QHashIterator<QString, QSharedPointer<IqPostmanMail> > mailsI(*mails);
-    while (mailsI.hasNext()) {
-        mailsI.next();
-        QString mailUid = mailsI.key();
-        QSharedPointer<IqPostmanMail> mail = mailsI.value() ;
+    foreach (QSharedPointer<IqPostmanMail> mail, mails) {
+        QTime profileTime;
+        profileTime.start();
+
         Q_CHECK_PTR(mail);
+        QString mailUid = mail->sourceId();
 
         QString dataStr;
         switch (data) {
@@ -336,10 +331,13 @@ bool IqPostmanImap4Client::fetchMailData(const QString &folderName, QHash<QStrin
                          .arg(dataStr)))
             return false;
 
+        qDebug() << "Prepare to fetch mail in " << profileTime.elapsed() << " msec.";
+
         QStringList responseData;
         ResponseResult responseResult = readResponse(tag, &responseData);
         if (responseResult != Ok)
             return false;
+       qDebug() << "Fetch mail in " << profileTime.elapsed() << " msec.";
 
         QStringList usefulResponseDataList = responseData.mid(1, responseData.length() - 2);
         if (usefulResponseDataList.isEmpty())
@@ -349,24 +347,26 @@ bool IqPostmanImap4Client::fetchMailData(const QString &folderName, QHash<QStrin
         last.remove(last.length() - 1, 1);
         usefulResponseDataList.removeLast();
         usefulResponseDataList.append(last);
-        QString usefulResponseDataStr = usefulResponseDataList.join(IqPostmanAbstractClient::crlf());
+        qDebug() << "Restikt response in " << profileTime.elapsed() << " msec.";
 
         switch (data) {
         case Header:
-            mail->header()->fromString(usefulResponseDataStr);
+            mail->header()->fromStringList(usefulResponseDataList);
             break;
         case Content: {
             QString conentTypeStr = mail->header()->contentType()->toString();
-            QString conentTransferEncodingStr = IqPostmanMime::contentTransferEncodingToString(mail->header()->contentTransferEncoding());
-            QString contentStr;
-            contentStr.append(conentTypeStr + IqPostmanAbstractClient::crlf());
-            contentStr.append(conentTransferEncodingStr + IqPostmanAbstractClient::crlf());
-            contentStr.append(usefulResponseDataStr);
-            IqPostmanAbstractContent *content = IqPostmanAbstractContent::createFromString(contentStr);
+            QString conentTransferEncodingStr = IqPostmanAbstractContent::contentTransferEncodingToString(mail->header()->contentTransferEncoding());
+            QStringList contentStrList;
+            contentStrList.append(conentTypeStr);
+            contentStrList.append(conentTransferEncodingStr);
+            contentStrList.append("");
+            contentStrList.append(usefulResponseDataList);
+            IqPostmanAbstractContent *content = IqPostmanAbstractContent::createFromStringList(contentStrList);
             mail->setContent(content);
             break;
         }
         }
+        qDebug() << "End fetch in " << profileTime.elapsed() << " msec.";
     }
 
     return true;
@@ -474,38 +474,48 @@ bool IqPostmanImap4Client::sendRequest(const QString &tag, const QString &reques
 
 IqPostmanImap4Client::ResponseResult IqPostmanImap4Client::readResponse(const QString &tag, QStringList *responseData) const
 {
-    QString responseStr;
+    QString lastString;
+    QRegExp responseRx(QString("^(%0) (OK|NO|BAD)")
+                       .arg(tag)
+                       , Qt::CaseInsensitive);
     while(m_socket->waitForReadyRead()) {
-        responseStr.append(m_socket->readAll());
-        *responseData = responseStr.split(IqPostmanAbstractClient::crlf());
-        if (responseData->size() > 0)
-            responseData->removeLast();
-        QString responseLastStr = responseData->last();
+        lastString.append(QLatin1String(m_socket->readLine()));
+        while(!lastString.isEmpty()) {
+            if (lastString.endsWith(IqPostmanAbstractClient::crlf())) {
+                responseData->append(lastString.left(lastString.length() - 2));
+            } else {
+                break;
+            }
+            lastString = QLatin1String(m_socket->readLine());
+        }
 
-        QRegExp responseRx("^(A\\d+) (OK|NO|BAD)");
-        if (responseRx.indexIn(responseLastStr) == -1)
-            continue;
+        if (!responseData->isEmpty()) {
+            QString fullLastString = responseData->last();
 
-        if (responseRx.cap(1) != tag)
-            return ReadError;
+            if (responseRx.indexIn(fullLastString) == -1)
+                continue;
 
-        qDebug() << "Reserve response " << responseLastStr.trimmed();
+            qDebug() << "Reserve response " << fullLastString;
 
-        QString responseResult = responseRx.cap(2);
-        if (responseResult == "OK")
-            return Ok;
-        else if (responseResult == "NO")
-            return No;
-        else if (responseResult == "BAD")
-            return Bad;
+            QString responseResult = responseRx.cap(2);
+            if (responseResult.compare("OK", Qt::CaseInsensitive) == 0)
+                return Ok;
+            else if (responseResult.compare("NO", Qt::CaseInsensitive) == 0)
+                return No;
+            else if (responseResult.compare("BAD", Qt::CaseInsensitive) == 0)
+                return Bad;
+        }
     }
 
+    qWarning() << "Error on reserve response for request with tag " << tag;
     return ReadError;
 }
 
 QString IqPostmanImap4Client::uniqueTag() const
 {
-    return QString("A%0").arg(m_currentTagId++);
+    return QString("RequestN%0R%1")
+            .arg(m_currentTagId++)
+            .arg(qrand());
 }
 
 bool IqPostmanImap4Client::selectFolder(const QString &folderName) const

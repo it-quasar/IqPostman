@@ -45,9 +45,9 @@ IqPostmanMultipartContentType::IqPostmanMultipartContentType(QObject *parent):
     }
 }
 
-IqPostmanMime::ContentType IqPostmanMultipartContentType::type() const
+IqPostmanAbstractContentType::ContentType IqPostmanMultipartContentType::type() const
 {
-    return IqPostmanMime::TypeMultipart;
+    return TypeMultipart;
 }
 
 QString IqPostmanMultipartContentType::typeName() const

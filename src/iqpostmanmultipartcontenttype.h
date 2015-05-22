@@ -43,7 +43,7 @@ public:
 
     explicit IqPostmanMultipartContentType(QObject *parent = Q_NULLPTR);
 
-    virtual IqPostmanMime::ContentType type() const Q_DECL_OVERRIDE;
+    virtual IqPostmanAbstractContentType::ContentType type() const Q_DECL_OVERRIDE;
     virtual QString typeName() const Q_DECL_OVERRIDE;
     static QString staticTypeName();
 

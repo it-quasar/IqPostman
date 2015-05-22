@@ -36,6 +36,11 @@ IqPostmanImageContentType *IqPostmanImageContent::contentType() const
     return m_contentType;
 }
 
+QString IqPostmanImageContent::format() const
+{
+    return m_contentType->imageFormat();
+}
+
 QImage IqPostmanImageContent::image() const
 {
     return m_image;
@@ -46,6 +51,7 @@ void IqPostmanImageContent::setImage(const QImage &image)
     if (m_image != image) {
         m_image = image;
         emit imageChanged();
+        emit dataChanged();
     }
 }
 

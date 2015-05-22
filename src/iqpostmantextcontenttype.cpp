@@ -45,9 +45,9 @@ IqPostmanTextContentType::IqPostmanTextContentType(QObject *parent):
     }
 }
 
-IqPostmanMime::ContentType IqPostmanTextContentType::type() const
+IqPostmanAbstractContentType::ContentType IqPostmanTextContentType::type() const
 {
-    return IqPostmanMime::TypeText;
+    return TypeText;
 }
 
 QString IqPostmanTextContentType::typeName() const

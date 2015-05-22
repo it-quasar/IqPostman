@@ -22,16 +22,28 @@
 
 #include <QObject>
 #include "iqpostman_global.h"
-#include "iqpostmanmime.h"
 
 class IQPOSTMANSHARED_EXPORT IqPostmanAbstractContentType : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(ContentType)
 public:
+    enum ContentType
+    {
+        TypeUnknown,
+        TypeText,
+        TypeMultipart,
+        TypeMessage,
+        TypeImage,
+        TypeAudio,
+        TypeVideo,
+        TypeApplication
+    };
+
     explicit IqPostmanAbstractContentType(QObject *parent = Q_NULLPTR);
     virtual ~IqPostmanAbstractContentType();
 
-    virtual IqPostmanMime::ContentType type() const = 0;
+    virtual ContentType type() const = 0;
 
     virtual QString typeName() const = 0;
 
@@ -39,6 +51,7 @@ public:
 
     QString toString() const;
 
+    static ContentType contentTypeFromString(const QString &string);
     static IqPostmanAbstractContentType *createFromString(const QString &string);
 
 protected:

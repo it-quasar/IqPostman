@@ -21,6 +21,10 @@
 
 #include "iqpostmantextcontenttype.h"
 #include "iqpostmanmultipartcontenttype.h"
+#include "iqpostmanimagecontenttype.h"
+#include "iqpostmanaudiocontenttype.h"
+#include "iqpostmanvideocontenttype.h"
+#include "iqpostmanapplicationcontenttype.h"
 
 #include <QRegExp>
 #include <QStringList>
@@ -89,22 +93,50 @@ QString IqPostmanAbstractContentType::toString() const
 
 IqPostmanAbstractContentType *IqPostmanAbstractContentType::createFromString(const QString &string)
 {
-    switch (IqPostmanMime::contentTypeFromString(string)) {
-    case IqPostmanMime::TypeText: {
+    switch (IqPostmanAbstractContentType::contentTypeFromString(string)) {
+    case IqPostmanAbstractContentType::TypeText: {
         IqPostmanTextContentType *result = new IqPostmanTextContentType();
         if (result->fromString(string))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeMultipart: {
+    case IqPostmanAbstractContentType::TypeMultipart: {
         IqPostmanMultipartContentType *result = new IqPostmanMultipartContentType();
         if (result->fromString(string))
             return result;
         delete result;
         break;
     }
-    case IqPostmanMime::TypeUnknown:
+    case IqPostmanAbstractContentType::TypeImage: {
+        IqPostmanImageContentType *result = new IqPostmanImageContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanAbstractContentType::TypeAudio: {
+        IqPostmanAudioContentType *result = new IqPostmanAudioContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanAbstractContentType::TypeVideo: {
+        IqPostmanVideoContentType *result = new IqPostmanVideoContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanAbstractContentType::TypeApplication: {
+        IqPostmanApplicationContentType *result = new IqPostmanApplicationContentType();
+        if (result->fromString(string))
+            return result;
+        delete result;
+        break;
+    }
+    case IqPostmanAbstractContentType::TypeUnknown:
         break;
     }
 
@@ -122,9 +154,41 @@ QHash<QString, QString> IqPostmanAbstractContentType::parseData(const QString &s
     QHash<QString, QString> result;
     foreach (const QString &dataStr, dataList) {
         QStringList paramList = dataStr.trimmed().split("=");
+
+        QString value = paramList.at(1);
+        if (value.startsWith("\""))
+            value.remove(0, 1);
+        if (value.endsWith("\""))
+            value.remove(value.length() - 1, 1);
+
         if (paramList.count() == 2)
-            result[paramList.at(0)] = paramList.at(1);
+            result[paramList.at(0)] = value;
     }
 
     return result;
 }
+
+IqPostmanAbstractContentType::ContentType IqPostmanAbstractContentType::contentTypeFromString(const QString &string)
+{
+    QRegExp contetnTypeRx("^Content-Type: \"?([^\\/]*)", Qt::CaseInsensitive);
+    if (contetnTypeRx.indexIn(string.trimmed()) == -1)
+        return TypeUnknown;
+
+    if (contetnTypeRx.cap(1).compare(IqPostmanTextContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeText;
+    else if (contetnTypeRx.cap(1).compare(IqPostmanMultipartContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeMultipart;
+    else if (contetnTypeRx.cap(1).compare("message", Qt::CaseInsensitive) == 0)
+        return TypeMessage;
+    else if (contetnTypeRx.cap(1).compare(IqPostmanImageContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeImage;
+    else if (contetnTypeRx.cap(1).compare(IqPostmanAudioContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeAudio;
+    else if (contetnTypeRx.cap(1).compare(IqPostmanVideoContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeVideo;
+    else if (contetnTypeRx.cap(1).compare(IqPostmanApplicationContentType::staticTypeName(), Qt::CaseInsensitive) == 0)
+        return TypeApplication;
+
+    return TypeUnknown;
+}
+

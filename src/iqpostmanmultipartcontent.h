@@ -22,8 +22,9 @@
 
 #include "iqpostmanabstractcontent.h"
 #include "iqpostmanmultipartcontenttype.h"
+#include "iqpostman_global.h"
 
-class IqPostmanMultipartContent : public IqPostmanAbstractContent
+class IQPOSTMANSHARED_EXPORT IqPostmanMultipartContent : public IqPostmanAbstractContent
 {
     Q_OBJECT
     Q_PROPERTY(IqPostmanMultipartContentType * contentType READ contentType CONSTANT)

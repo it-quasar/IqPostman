@@ -40,9 +40,26 @@ bool IqPostmanMultipartContent::fromContentData(const IqPostmanContentData &data
 {
     m_parts.clear();
 
-    QStringList parts = data.content.split("--" + m_contentType->boundary());
-    foreach (const QString &part, parts) {
-        IqPostmanAbstractContent *content = IqPostmanAbstractContent::createFromString(part);
+    QList<QStringList> parts;
+    QStringList part;
+    foreach (const QString &string, data.content) {
+        if (string == "--" + m_contentType->boundary() + "--") {
+            parts << part;
+            part.clear();
+            break;
+        }
+        if (string == "--" + m_contentType->boundary()) {
+            parts << part;
+            part.clear();
+            continue;
+        }
+        part << string;
+    }
+
+    parts.removeFirst();
+
+    foreach (const QStringList &part, parts) {
+        IqPostmanAbstractContent *content = IqPostmanAbstractContent::createFromStringList(part);
         if (content) {
             content->setParent(this);
             m_parts.append(content);
@@ -60,7 +77,7 @@ const IqPostmanContentData IqPostmanMultipartContent::toContentData() const
 
     foreach (const IqPostmanAbstractContent *part, m_parts) {
         result.content.append("--" + m_contentType->boundary() + IqPostmanAbstractClient::crlf());
-        result.content.append(part->toString());
+        result.content.append(part->toStringList());
     }
     result.content.append("--" + m_contentType->boundary() + "--" + IqPostmanAbstractClient::crlf());
 
